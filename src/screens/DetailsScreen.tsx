@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation';
+import { PrivateStackParamList } from '../navigation/types';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Details'>;
+type Props = NativeStackScreenProps<PrivateStackParamList, 'Details'>;
 
 export default function DetailsScreen({ route }: Props) {
   const name = route.params?.name ?? 'Invitado';

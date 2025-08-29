@@ -1,3 +1,4 @@
+// screens/Login/LoginScreen.tsx
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
@@ -6,18 +7,21 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../navigation';
 import { styles } from './Login.styles';
 import { login } from '../../services/auth';
+import { useAuth } from '../../services/auth/AuthContext';
+import { PublicStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
+type Props = NativeStackScreenProps<PublicStackParamList, 'Login'>;
 
-export default function LoginScreen({ navigation }: Props) {
+export default function LoginScreen({}: Props) {
   const [email, setEmail] = useState('');
   const [pwd, setPwd] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const { signIn } = useAuth(); // cambia el estado global
 
   const onLogin = async () => {
     if (!email.trim() || !pwd.trim()) {
@@ -27,8 +31,9 @@ export default function LoginScreen({ navigation }: Props) {
     setErrorMsg(null);
     try {
       setLoading(true);
-      await login(email.trim(), pwd);
-      navigation.navigate('Details', { name: 'Camilo' }); // cambia a tu pantalla principal
+      // await login(email.trim(), pwd);
+      // éxito → autenticar → RootNavigator muestra las tabs
+      signIn();
     } catch (e: any) {
       setErrorMsg(e?.message || 'No fue posible iniciar sesión.');
     } finally {
@@ -46,10 +51,9 @@ export default function LoginScreen({ navigation }: Props) {
             resizeMode="cover"
           />
 
-          {/* ÚNICA CARD */}
           <View style={styles.card}>
             <Image
-              source={require('../../img/icons/logo1.png')}
+              source={require('../../../assets/icons/logo1.png')}
               style={styles.logo}
             />
 
