@@ -1,45 +1,86 @@
-// screens/Login/LoginScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect, useCallback } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard,
-  ImageBackground, Image
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  ImageBackground,
+  Image,
+  StatusBar,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { styles } from './Login.styles';
-import { login } from '../../services/auth';
+// import { login } from '../../services/auth'; // ← descomenta si usas login real
 import { useAuth } from '../../services/auth/AuthContext';
 import { PublicStackParamList } from '../../navigation/types';
 
+// Components reutilizables (ya en tu carpeta components)
+import AuthCard from '../../components/AuthCard';
+import ForgotPasswordForm from '../../components/ForgotPasswordForm';
+
 type Props = NativeStackScreenProps<PublicStackParamList, 'Login'>;
 
-export default function LoginScreen({}: Props) {
+export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [pwd, setPwd] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
-  const { signIn } = useAuth(); // cambia el estado global
+  // Mostrar/ocultar la card de recuperación
+  const [showForgot, setShowForgot] = useState(false);
+
+  const { signIn } = useAuth();
+
+  // Oculta el header del Stack SOLO aquí
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
+  // Oculta la StatusBar cuando esta pantalla está enfocada
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setHidden(true, 'fade');
+      return () => StatusBar.setHidden(false, 'fade');
+    }, [])
+  );
+
+  // Retroceder (si no hay historial → Home)
+  const onBack = () => {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.navigate('Home' as never);
+  };
 
   const onLogin = async () => {
-    if (!email.trim() || !pwd.trim()) {
-      setErrorMsg('Ingresa correo y contraseña.');
+    setSubmitted(true);
+
+    const emailEmpty = !email.trim();
+    const pwdEmpty = !pwd.trim();
+    if (emailEmpty || pwdEmpty) {
+      setErrorMsg(null); // los mensajes por campo se muestran abajo
       return;
     }
+
     setErrorMsg(null);
     try {
       setLoading(true);
       // await login(email.trim(), pwd);
-      // éxito → autenticar → RootNavigator muestra las tabs
-      signIn();
+      signIn(); // éxito → autentica y navega según tu RootNavigator
     } catch (e: any) {
       setErrorMsg(e?.message || 'No fue posible iniciar sesión.');
     } finally {
       setLoading(false);
     }
   };
+
+  const showEmailRequired = submitted && !email.trim();
+  const showPwdRequired = submitted && !pwd.trim();
 
   return (
     <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
@@ -50,6 +91,24 @@ export default function LoginScreen({}: Props) {
             style={styles.bgFull}
             resizeMode="cover"
           />
+
+          {/* Flecha de retroceso */}
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={onBack}
+            hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}
+          >
+            <Svg width={22} height={22} viewBox="0 0 24 24">
+              <Path
+                d="M15 18l-6-6 6-6"
+                stroke="#123C56"
+                strokeWidth={2}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+          </TouchableOpacity>
 
           <View style={styles.card}>
             <Image
@@ -76,6 +135,9 @@ export default function LoginScreen({}: Props) {
                 style={styles.input}
               />
             </View>
+            {showEmailRequired ? (
+              <Text style={styles.errorField}>El correo es obligatorio.</Text>
+            ) : null}
 
             <Text style={styles.labelPwd}>Digite su contraseña</Text>
             <View style={styles.inputWrap}>
@@ -94,19 +156,17 @@ export default function LoginScreen({}: Props) {
                 style={styles.input}
               />
               <TouchableOpacity onPress={() => setShowPwd(s => !s)} style={styles.rightIcon}>
-                {showPwd ? (
-                  <Svg width={15} height={15} viewBox="0 0 15 15">
-                    <Path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" stroke="#587FA3" strokeWidth={7} fill="none" />
-                    <Path d="M12 9a3 3 0 1 0 0.001 6.001A3 3 0 0 0 12 9Z" fill="#587FA3" />
-                  </Svg>
-                ) : (
-                  <Svg width={20} height={20} viewBox="0 0 24 24">
-                    <Path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" stroke="#587FA3" strokeWidth={2} fill="none" />
+                <Svg width={20} height={20} viewBox="0 0 24 24">
+                  <Path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" stroke="#587FA3" strokeWidth={2} fill="none" />
+                  {showPwd ? null : (
                     <Path d="M3 3l18 18" stroke="#587FA3" strokeWidth={2} />
-                  </Svg>
-                )}
+                  )}
+                </Svg>
               </TouchableOpacity>
             </View>
+            {showPwdRequired ? (
+              <Text style={styles.errorField}>La contraseña es obligatoria.</Text>
+            ) : null}
 
             {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
 
@@ -114,10 +174,21 @@ export default function LoginScreen({}: Props) {
               <Text style={styles.btnText}>{loading ? '...' : 'Ingresar'}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => {}} style={styles.forgotWrap}>
+            <TouchableOpacity onPress={() => setShowForgot(true)} style={styles.forgotWrap}>
               <Text style={styles.forgot}>¿Olvidaste tu contraseña?</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Card reutilizable encima del login */}
+          <AuthCard
+            visible={showForgot}
+            onClose={() => setShowForgot(false)}
+            title="¿Olvidaste Tu contraseña?"
+            subtitle="Ingrese su correo electrónico"
+            logoSource={require('../../../assets/icons/logo1.png')}
+          >
+            <ForgotPasswordForm onSuccess={() => setShowForgot(false)} />
+          </AuthCard>
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
