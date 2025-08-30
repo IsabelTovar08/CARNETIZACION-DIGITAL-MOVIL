@@ -1,25 +1,21 @@
-// Tipos de stacks separados para público y privado
-
+// src/navigation/types.ts
 export type PublicStackParamList = {
   Landing: undefined;
   Login: undefined;
+  VerifyPassword: { email: string };
+  VerifyResult: { email: string };
+  ResetPassword: { email: string };
 };
 
 export type PrivateStackParamList = {
-  Inicio: { name?: string } | undefined;
-  Details: { name?: string } | undefined;
-  Ajustes: undefined;
-  Notificaciones: undefined;
+  Inicio: undefined | { name?: string };
+  Details: undefined | { name?: string };
   Perfil: undefined;
-
+  Notificaciones: undefined;
 };
 
-// (Opcional) Si quieres tipar el Tab Navigator:
 export type AppTabParamList = {
-  HomeTab: undefined;  // contiene el stack privado (Home/Details)
-  // Perfil: undefined; // agrega más tabs si las necesitas
-  SettingsTab: undefined;
-  Settings: undefined;
+  HomeTab: undefined;
   DetailsTab: undefined;
   NotificationsTab: undefined;
   PerfilTab: undefined;

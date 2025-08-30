@@ -25,6 +25,7 @@ export default function AuthCard({
   children,
 }: AuthCardProps) {
   return (
+    
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={[styles.card, SHADOW]}>
@@ -43,12 +44,14 @@ export default function AuthCard({
           {/* Título / Subtítulo */}
           {title ? <Text style={styles.title}>{title}</Text> : null}
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          
 
           {/* Contenido (form) */}
           <View style={styles.content}>{children}</View>
         </View>
       </View>
     </Modal>
+    
   );
 }
 

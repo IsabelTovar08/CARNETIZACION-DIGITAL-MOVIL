@@ -1,9 +1,21 @@
+// src/components/ForgotPasswordForm/index.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  Keyboard,
+} from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { requestPasswordReset } from '../../services/auth/recover';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PublicStackParamList } from '../../navigation/types';
 
-type Props = { onSuccess?: () => void };
+type Nav = NativeStackNavigationProp<PublicStackParamList>;
+type Props = { onSuccess?: (email: string) => void }; // puedes no usarlo por ahora
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 
@@ -13,31 +25,29 @@ const SHADOW =
     : { elevation: 6 };
 
 export default function ForgotPasswordForm({ onSuccess }: Props) {
+  const navigation = useNavigation<Nav>();
+
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [serverMsg, setServerMsg] = useState<string | null>(null);
-  const [serverErr, setServerErr] = useState<string | null>(null);
+  const [navigating, setNavigating] = useState(false); // evita doble navegación
 
-  const invalidEmail = submitted && (!email.trim() || !emailRegex.test(email.trim()));
+  const trimmed = email.trim();
+  const invalidEmail = submitted && (!trimmed || !emailRegex.test(trimmed));
 
-  const onSend = async () => {
+  const onSend = () => {
+    if (navigating) return;
     setSubmitted(true);
-    setServerErr(null);
-    setServerMsg(null);
 
-    if (!email.trim() || !emailRegex.test(email.trim())) return;
+    if (!trimmed || !emailRegex.test(trimmed)) return;
 
-    try {
-      setLoading(true);
-      await requestPasswordReset(email.trim());
-      setServerMsg('Si el correo existe, te enviamos instrucciones para restablecer la contraseña.');
-      if (onSuccess) setTimeout(onSuccess, 900);
-    } catch (e: any) {
-      setServerErr(e?.message || 'No fue posible procesar la solicitud.');
-    } finally {
-      setLoading(false);
-    }
+    Keyboard.dismiss();
+    setNavigating(true);
+    // SOLO FRONT: navega directo a la pantalla del código
+    navigation.navigate('VerifyPassword', { email: trimmed });
+    // Si en algún momento quieres notificar al padre:
+    // onSuccess?.(trimmed);
+    // opcional: vuelve a permitir taps al regresar de la navegación
+    setTimeout(() => setNavigating(false), 300);
   };
 
   return (
@@ -68,20 +78,25 @@ export default function ForgotPasswordForm({ onSuccess }: Props) {
           autoCapitalize="none"
           autoCorrect={false}
           style={styles.input}
+          returnKeyType="send"
+          onSubmitEditing={onSend}
         />
       </View>
 
       {invalidEmail ? (
         <Text style={styles.errorField}>
-          {email.trim() ? 'Formato de correo inválido.' : 'El correo es obligatorio.'}
+          {trimmed ? 'Formato de correo inválido.' : 'El correo es obligatorio.'}
         </Text>
       ) : null}
 
-      {serverErr ? <Text style={styles.errorServer}>{serverErr}</Text> : null}
-      {serverMsg ? <Text style={styles.ok}>{serverMsg}</Text> : null}
-
-      <TouchableOpacity style={styles.btn} onPress={onSend} disabled={loading}>
-        {loading ? <ActivityIndicator /> : <Text style={styles.btnText}>Enviar</Text>}
+      <TouchableOpacity
+        style={[styles.btn, navigating && { opacity: 0.7 }]}
+        onPress={onSend}
+        disabled={navigating}
+        accessibilityRole="button"
+        accessibilityLabel="Enviar código de recuperación"
+      >
+        <Text style={styles.btnText}>Enviar</Text>
       </TouchableOpacity>
     </View>
   );
@@ -90,8 +105,6 @@ export default function ForgotPasswordForm({ onSuccess }: Props) {
 const styles = StyleSheet.create({
   bigIconWrap: { alignItems: 'center', marginBottom: 12, marginTop: 2 },
   label: { color: '#5E7C94', marginBottom: 8, fontWeight: '600', textAlign: 'center' },
-
-  // MISMA “onda” visual de tus inputs del login (bordes suaves y alto 44)
   inputWrap: {
     backgroundColor: '#fff',
     borderRadius: 20,
@@ -104,12 +117,7 @@ const styles = StyleSheet.create({
   },
   input: { fontSize: 15, color: '#0E2E42' },
   leftIcon: { position: 'absolute', left: 12, top: 12 },
-
   errorField: { color: '#b91c1c', fontSize: 12, marginTop: 6, textAlign: 'center' },
-  errorServer: { color: '#b91c1c', textAlign: 'center', marginTop: 8 },
-  ok: { color: '#1a7f37', textAlign: 'center', marginTop: 8 },
-
-  // Botón igual tono que el login
   btn: {
     backgroundColor: '#4F7FA5',
     paddingVertical: 12,
