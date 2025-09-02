@@ -85,7 +85,7 @@ export default function QrReaderScreen() {
   const canConfirm = useMemo(() => {
     if (!parsed) return false;
     // Ajusta tus claves reales aquí (ejemplos: eventId, userId)
-    const possibleEventKeys = ['eventId', 'eventoId', 'id_evento'];
+    const possibleEventKeys = ['eventId', 'eventoId', 'Event'];
     const possibleUserKeys = ['userId', 'usuarioId', 'id_usuario', 'uid'];
 
     const hasEvent = possibleEventKeys.some(k => parsed[k] != null && String(parsed[k]).length > 0);
@@ -97,7 +97,7 @@ export default function QrReaderScreen() {
 
   // Simula POST a tu API
   const confirmAttendance = async () => {
-    if (!canConfirm || !parsed) return;
+    // if (!canConfirm || !parsed) return;
     try {
       setConfirming(true);
       // Aquí conectarías tu API, por ejemplo:
@@ -234,7 +234,6 @@ export default function QrReaderScreen() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    disabled={!canConfirm || confirming}
                     style={[
                       styles.confirmBtn,
                       (!canConfirm || confirming) && { opacity: 0.6 },

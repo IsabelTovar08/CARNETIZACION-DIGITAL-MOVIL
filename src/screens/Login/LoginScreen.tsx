@@ -22,6 +22,7 @@ import { PublicStackParamList } from '../../navigation/types';
 // Components reutilizables (ya en tu carpeta components)
 import AuthCard from '../../components/AuthCard';
 import ForgotPasswordForm from '../../components/ForgotPasswordForm';
+import { login } from '../../services/auth';
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'Login'>;
 
@@ -70,7 +71,7 @@ export default function LoginScreen({ navigation }: Props) {
     setErrorMsg(null);
     try {
       setLoading(true);
-      // await login(email.trim(), pwd);
+      await login(email.trim(), pwd);
       signIn(); // éxito → autentica y navega según tu RootNavigator
     } catch (e: any) {
       setErrorMsg(e?.message || 'No fue posible iniciar sesión.');
