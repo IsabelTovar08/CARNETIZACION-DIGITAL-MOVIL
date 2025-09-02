@@ -6,24 +6,24 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../services/auth/AuthContext';
 import { PublicStackParamList, PrivateStackParamList, AppTabParamList } from './types';
 
-// ===== Público =====
+// Público
 import LandingScreen from '../screens/Landing/LandingScreen';
 import LoginScreen from '../screens/Login/LoginScreen';
 import VerifyPasswordScreen from '../screens/VerifyPassword';
 import VerifyResultScreen from '../screens/VerifyResult';
 import ResetPasswordScreen from '../screens/ResetPassword';
 
-// ===== Privado =====
+// Privado
 import HomeScreen from '../screens/Home/HomeScreen';
 import DetailsScreen from '../screens/DetailsScreen';
 import SettingsScreen from '../screens/Settings/SettingsScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 import NotificationsScreen from '../screens/Profile/Notifications/NotificationsScreen';
 
-// Pantalla nueva: Eventos Pasados
+// Extras
 import PastEventsScreen from '../screens/PastEvents';
+import QrReaderScreen from '../screens/QrReader';
 
-// Tab bar custom
 import MyTabBar from './TabBarIcon';
 
 const PublicStack = createNativeStackNavigator<PublicStackParamList>();
@@ -38,20 +38,18 @@ function PublicNavigator() {
       <PublicStack.Screen name="VerifyPassword" component={VerifyPasswordScreen} />
       <PublicStack.Screen name="VerifyResult" component={VerifyResultScreen} />
       <PublicStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-      {/* Si también quieres abrir PastEvents desde pantallas públicas, puedes habilitarla aquí: */}
-      {/* <PublicStack.Screen name="PastEvents" component={PastEventsScreen} /> */}
     </PublicStack.Navigator>
   );
 }
 
-// ===== Stacks privados por tab =====
 function HomePrivateStack() {
   return (
     <PrivateStack.Navigator screenOptions={{ headerShown: true }}>
       <PrivateStack.Screen name="Inicio" component={HomeScreen} />
       <PrivateStack.Screen name="Details" component={DetailsScreen} options={{ title: 'Detalles' }} />
-      {/* REGISTRO aquí para que "Ver más" desde Home pueda navegar */}
       <PrivateStack.Screen name="PastEvents" component={PastEventsScreen} options={{ headerShown: false }} />
+      {/* Si quieres abrir QR también desde Home, puedes dejarlo aquí duplicado */}
+      {/* <PrivateStack.Screen name="QrReader" component={QrReaderScreen} options={{ headerShown: false }} /> */}
     </PrivateStack.Navigator>
   );
 }
@@ -60,6 +58,7 @@ function DetailsPrivateStack() {
   return (
     <PrivateStack.Navigator screenOptions={{ headerShown: true }}>
       <PrivateStack.Screen name="Details" component={DetailsScreen} />
+      <PrivateStack.Screen name="QrReader" component={QrReaderScreen} options={{ headerShown: false }} />
     </PrivateStack.Navigator>
   );
 }
@@ -88,7 +87,6 @@ function SettingsPrivateStack() {
   );
 }
 
-// ===== Tabs privadas =====
 function AppTabs() {
   return (
     <Tab.Navigator
@@ -104,7 +102,6 @@ function AppTabs() {
   );
 }
 
-// ===== Root =====
 export default function RootNavigator() {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <AppTabs /> : <PublicNavigator />;

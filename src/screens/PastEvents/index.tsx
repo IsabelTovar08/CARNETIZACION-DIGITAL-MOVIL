@@ -1,11 +1,9 @@
-// src/screens/PastEvents/index.tsx
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   SafeAreaView,
   View,
   Text,
   ImageBackground,
-  StyleSheet,
   TouchableOpacity,
   ScrollView,
   Image,
@@ -14,11 +12,10 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import AuthCard from '../../components/AuthCard';
+import { styles } from './PastEvents.styles';
 
-// ===== Fondo local
 const BG = require('../../img/fondo.png');
 
-// ===== Imágenes locales de eventos (ajusta nombres/rutas)
 const IMG_IA    = require('../../img/ia.png');
 const IMG_GASTO = require('../../img/gasto.png');
 const IMG_JAVA  = require('../../img/java.png');
@@ -30,7 +27,7 @@ type EventItem = {
   date: string;
   start: string;
   end: string;
-  img: any;          // require(...)
+  img: any;
   desc: string;
 };
 
@@ -110,7 +107,7 @@ export default function PastEventsScreen() {
           <Text style={styles.title}>
             Eventos{'\n'}<Text style={styles.title2}>Pasados</Text>
           </Text>
-          <View style={{ width: 26 }} />
+          <View style={styles.headerSpacer} />
         </View>
 
         {/* Listado */}
@@ -123,33 +120,22 @@ export default function PastEventsScreen() {
                 <View style={styles.row}>
                   <Text style={styles.meta}>Fecha: {ev.date}</Text>
                 </View>
-                <View style={[styles.row, { justifyContent: 'space-between', marginTop: 6 }]}>
+                <View style={styles.rowSpace}>
                   <Text style={styles.meta}>Hora inicio: {ev.start}</Text>
                   <Text style={styles.meta}>Hora Fin: {ev.end}</Text>
                 </View>
               </View>
             </TouchableOpacity>
           ))}
-          <View style={{ height: 24 }} />
+          <View style={styles.footerSpace} />
         </ScrollView>
       </ImageBackground>
 
-      {/* ===== MODAL DETALLE (AuthCard reutilizable) ===== */}
-      <AuthCard
-        visible={showModal}
-        onClose={closeModal}
-        // sin título/subtítulo del AuthCard para tener control total del layout interno
-        logoSource={undefined}
-      >
+      {/* Modal detalle — solo se cierra con la X del AuthCard */}
+      <AuthCard visible={showModal} onClose={closeModal} logoSource={undefined}>
         {!!selected && (
           <View>
-            {/* Flecha dentro de la card (opcional, además del botón ✕ de AuthCard) */}
-            <TouchableOpacity onPress={closeModal} style={{ marginBottom: 6, alignSelf: 'flex-start' }}>
-              <Svg width={22} height={22} viewBox="0 0 24 24">
-                <Path d="M15 18l-6-6 6-6" stroke="#6A7F91" strokeWidth={2} fill="none" strokeLinecap="round" />
-              </Svg>
-            </TouchableOpacity>
-
+            {/* Flecha interna eliminada */}
             <Text style={styles.modalEyebrow}>Evento</Text>
             <Text style={styles.modalTitle}>{selected.title}</Text>
 
@@ -157,7 +143,7 @@ export default function PastEventsScreen() {
 
             <Text style={styles.modalSection}>Descripción</Text>
             <View style={styles.modalBox}>
-              <ScrollView style={{ maxHeight: 160 }} showsVerticalScrollIndicator={false}>
+              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
                 <Text style={styles.modalDesc}>{selected.desc}</Text>
               </ScrollView>
             </View>
@@ -167,50 +153,3 @@ export default function PastEventsScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: 'transparent' },
-  bg: { flex: 1 },
-
-  header: {
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  title: { color: '#0f3a54', fontSize: 30, fontWeight: '900', lineHeight: 32 },
-  title2: { color: '#0f3a54' },
-
-  list: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
-
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    overflow: 'hidden',
-    marginTop: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.07)',
-    elevation: 3,
-  },
-  cardImg: { width: '100%', height: 160 },
-  cardBody: { padding: 12 },
-  cardTitle: { color: '#1b3e56', fontSize: 16, fontWeight: '800', marginBottom: 4, textTransform: 'capitalize' },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  meta: { color: '#334e64' },
-
-  // ===== estilos del contenido del modal =====
-  modalEyebrow: { color: '#6A7F91', fontSize: 13, marginBottom: 6 },
-  modalTitle: { color: '#222E39', fontSize: 22, fontWeight: '900', marginBottom: 8, lineHeight: 26 },
-  modalImg: { width: '100%', height: 170, borderRadius: 12, marginBottom: 12 },
-  modalSection: { color: '#223F53', fontSize: 16, fontWeight: '800', marginTop: 4, marginBottom: 8 },
-  modalBox: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#CBD7E1',
-    padding: 10,
-  },
-  modalDesc: { color: '#2B3F52', lineHeight: 20 },
-});

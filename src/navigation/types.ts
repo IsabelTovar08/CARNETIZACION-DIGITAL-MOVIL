@@ -6,7 +6,7 @@ export type PublicStackParamList = {
   VerifyPassword: { email: string };
   VerifyResult: { email: string };
   ResetPassword: { email: string };
-  PastEvents: undefined;               // (puedes dejarlo también en público si lo usas desde allí)
+  PastEvents: undefined;
 };
 
 export type PrivateStackParamList = {
@@ -14,7 +14,8 @@ export type PrivateStackParamList = {
   Details: undefined | { name?: string };
   Perfil: undefined;
   Notificaciones: undefined;
-  PastEvents: undefined;               // ⬅️ AÑADIDO: para poder navegar desde Home/privado
+  PastEvents: undefined;
+  QrReader: undefined;   //  lector QR
 };
 
 export type AppTabParamList = {
