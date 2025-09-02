@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+// src/screens/Home/HomeScreen.tsx
+import React, { useMemo, useState, useCallback } from 'react';
 import { View, Text, SafeAreaView, FlatList } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { styles } from './Home.styles';
@@ -10,24 +11,28 @@ import ProfileHeader from '../../components/ProfileHeader/ProfileHeader';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
 import SearchBar from '../../components/SearchBar/SearchBar';
 
-// Comentario (ES): tip de props para tu stack
 type Props = NativeStackScreenProps<PrivateStackParamList, 'Inicio'>;
 
-// Comentario (ES): data simulada; reemplaza por tu fetch/API
+// Data simulada; reemplaza por tu fetch/API
 const ATTENDANCE = [
-  { id: '1', icon: 'logo-electron', title: 'Conferencia de Inteligencia artificial', chip: '1h' },
-  { id: '2', icon: 'cafe-outline',  title: 'Conceptos básicos en Java',            chip: '3h' },
-  { id: '3', icon: 'calendar-outline', title: 'Arquitectura de Software',          chip: 'Ayer' },
-  { id: '4', icon: 'code-working-outline', title: 'Clean Code y SOLID',           chip: 'Lun' },
-  { id: '5', icon: 'school-outline', title: 'Patrones de diseño',                  chip: 'Mañana' },
-  { id: '6', icon: 'school-outline', title: 'Patrones de diseño',                  chip: 'Mañana' },
-  { id: '7', icon: 'school-outline', title: 'Patrones de diseño',                  chip: 'Mañana' },
-
+  { id: '1', icon: 'logo-electron',        title: 'Conferencia de Inteligencia artificial', chip: '1h' },
+  { id: '2', icon: 'cafe-outline',         title: 'Conceptos básicos en Java',              chip: '3h' },
+  { id: '3', icon: 'calendar-outline',     title: 'Arquitectura de Software',               chip: 'Ayer' },
+  { id: '4', icon: 'code-working-outline', title: 'Clean Code y SOLID',                     chip: 'Lun' },
+  { id: '5', icon: 'school-outline',       title: 'Patrones de diseño',                     chip: 'Mañana' },
+  { id: '6', icon: 'school-outline',       title: 'Microservicios en la práctica',          chip: 'Mañana' },
+  { id: '7', icon: 'school-outline',       title: 'Optimización de consultas SQL',          chip: 'Mañana' },
 ];
 
-export default function HomeScreen({}: Props) {
+export default function HomeScreen({ navigation }: Props) {
   const [query, setQuery] = useState('');
-  // Header superior de la lista (ES): avatar, buscador, tarjeta principal y título de sección
+
+  // Navegar a la pantalla de Eventos Pasados
+  const goToPastEvents = useCallback(() => {
+    navigation.navigate('PastEvents');
+  }, [navigation]);
+
+  // Header de la lista
   const listHeader = useMemo(
     () => (
       <View>
@@ -36,13 +41,13 @@ export default function HomeScreen({}: Props) {
 
         {/* Buscador */}
         <View style={styles.searchWrap}>
-        <SearchBar
-          value={query}
-          onChangeText={setQuery}
-          onClear={() => setQuery('')}
-          placeholder="Buscar conferencias…"
-        />
-      </View>
+          <SearchBar
+            value={query}
+            onChangeText={setQuery}
+            onClear={() => setQuery('')}
+            placeholder="Buscar conferencias…"
+          />
+        </View>
 
         {/* Tarjeta principal (pendientes) */}
         <HighlightCard />
@@ -50,8 +55,8 @@ export default function HomeScreen({}: Props) {
         {/* "Asistir" + "Ver más" */}
         <SectionHeader
           title="Asistir"
-          leftBadge={<Text style={styles.badge}>+</Text>}
-          onAction={() => {}}
+          leftBadge={<Text style={styles.badge}>＋</Text>}
+          onAction={goToPastEvents}   // 👈 navega a PastEvents
         />
 
         {/* Últimas asistencias */}
@@ -60,12 +65,14 @@ export default function HomeScreen({}: Props) {
         </View>
       </View>
     ),
-    [query]
+    [query, goToPastEvents]
   );
 
-   const data = useMemo(() => ATTENDANCE.filter(x =>
-    x.title.toLowerCase().includes(query.toLowerCase())
-  ), [query]);
+  // Filtro por búsqueda
+  const data = useMemo(
+    () => ATTENDANCE.filter(x => x.title.toLowerCase().includes(query.toLowerCase())),
+    [query]
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -78,25 +85,6 @@ export default function HomeScreen({}: Props) {
         renderItem={({ item }) => (
           <AttendanceCard icon={item.icon as any} title={item.title} chip={item.chip} />
         )}
-        ListFooterComponent={<View style={{ height: 24 }} />}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
-  );
-
-  return (
-    <SafeAreaView style={styles.safe}>
-      <FlatList
-        data={ATTENDANCE}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={listHeader}
-        // Comentario (ES): separador vertical entre tarjetas
-        ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
-        renderItem={({ item }) => (
-          <AttendanceCard icon={item.icon as any} title={item.title} chip={item.chip} />
-        )}
-        // Comentario (ES): espacio final para no tapar con la TabBar
         ListFooterComponent={<View style={{ height: 24 }} />}
         showsVerticalScrollIndicator={false}
       />

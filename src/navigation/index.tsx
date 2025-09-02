@@ -6,19 +6,22 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../services/auth/AuthContext';
 import { PublicStackParamList, PrivateStackParamList, AppTabParamList } from './types';
 
-// ======= Público =======
+// ===== Público =====
 import LandingScreen from '../screens/Landing/LandingScreen';
 import LoginScreen from '../screens/Login/LoginScreen';
 import VerifyPasswordScreen from '../screens/VerifyPassword';
 import VerifyResultScreen from '../screens/VerifyResult';
 import ResetPasswordScreen from '../screens/ResetPassword';
 
-// ======= Privado =======
+// ===== Privado =====
 import HomeScreen from '../screens/Home/HomeScreen';
 import DetailsScreen from '../screens/DetailsScreen';
 import SettingsScreen from '../screens/Settings/SettingsScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 import NotificationsScreen from '../screens/Profile/Notifications/NotificationsScreen';
+
+// Pantalla nueva: Eventos Pasados
+import PastEventsScreen from '../screens/PastEvents';
 
 // Tab bar custom
 import MyTabBar from './TabBarIcon';
@@ -35,24 +38,28 @@ function PublicNavigator() {
       <PublicStack.Screen name="VerifyPassword" component={VerifyPasswordScreen} />
       <PublicStack.Screen name="VerifyResult" component={VerifyResultScreen} />
       <PublicStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+      {/* Si también quieres abrir PastEvents desde pantallas públicas, puedes habilitarla aquí: */}
+      {/* <PublicStack.Screen name="PastEvents" component={PastEventsScreen} /> */}
     </PublicStack.Navigator>
   );
 }
 
-// ======= Stacks privados por tab =======
+// ===== Stacks privados por tab =====
 function HomePrivateStack() {
   return (
-    <PrivateStack.Navigator>
-      <PrivateStack.Screen name="Inicio" component={HomeScreen} options={{ headerShown: true }} />
+    <PrivateStack.Navigator screenOptions={{ headerShown: true }}>
+      <PrivateStack.Screen name="Inicio" component={HomeScreen} />
       <PrivateStack.Screen name="Details" component={DetailsScreen} options={{ title: 'Detalles' }} />
+      {/* REGISTRO aquí para que "Ver más" desde Home pueda navegar */}
+      <PrivateStack.Screen name="PastEvents" component={PastEventsScreen} options={{ headerShown: false }} />
     </PrivateStack.Navigator>
   );
 }
 
 function DetailsPrivateStack() {
   return (
-    <PrivateStack.Navigator>
-      <PrivateStack.Screen name="Details" component={DetailsScreen} options={{ headerShown: true }} />
+    <PrivateStack.Navigator screenOptions={{ headerShown: true }}>
+      <PrivateStack.Screen name="Details" component={DetailsScreen} />
     </PrivateStack.Navigator>
   );
 }
@@ -67,21 +74,21 @@ function PeoplePrivateStack() {
 
 function NotificationsPrivateStack() {
   return (
-    <PrivateStack.Navigator>
-      <PrivateStack.Screen name="Notificaciones" component={NotificationsScreen} options={{ headerShown: true }} />
+    <PrivateStack.Navigator screenOptions={{ headerShown: true }}>
+      <PrivateStack.Screen name="Notificaciones" component={NotificationsScreen} />
     </PrivateStack.Navigator>
   );
 }
 
 function SettingsPrivateStack() {
   return (
-    <PrivateStack.Navigator>
-      <PrivateStack.Screen name="Inicio" component={SettingsScreen} options={{ headerShown: true }} />
+    <PrivateStack.Navigator screenOptions={{ headerShown: true }}>
+      <PrivateStack.Screen name="Inicio" component={SettingsScreen} />
     </PrivateStack.Navigator>
   );
 }
 
-// ======= Tabs privadas =======
+// ===== Tabs privadas =====
 function AppTabs() {
   return (
     <Tab.Navigator
@@ -97,7 +104,7 @@ function AppTabs() {
   );
 }
 
-// ======= Root =======
+// ===== Root =====
 export default function RootNavigator() {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <AppTabs /> : <PublicNavigator />;
