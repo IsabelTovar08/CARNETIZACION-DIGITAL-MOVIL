@@ -1,3 +1,4 @@
+// src/screens/Profile/ProfileScreen.tsx
 import React, { useMemo, useState } from 'react';
 import {
   View,
@@ -9,9 +10,19 @@ import {
   SafeAreaView,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { CompositeNavigationProp } from '@react-navigation/native';
 
-import { styles } from './Profile.styles'; // 🎨 estilos aparte
+import { styles } from './Profile.styles';
 import { useAuth } from '../../services/auth/AuthContext';
+import { PrivateStackParamList, AppTabParamList } from '../../navigation/types';
+
+type Nav = CompositeNavigationProp<
+  NativeStackNavigationProp<PrivateStackParamList, 'Perfil'>,
+  BottomTabNavigationProp<AppTabParamList, 'PerfilTab'>
+>;
 
 type Profile = {
   fullName: string;
@@ -21,14 +32,15 @@ type Profile = {
 };
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<Nav>();
+  const { signOut } = useAuth();
+
   const [profile, setProfile] = useState<Profile>({
     fullName: 'Jhoan Charry',
     email: 'charry@gmail.com',
     birthDate: '1995-05-23',
     city: 'Neiva, Huila',
   });
-
-  const { signOut } = useAuth(); 
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -45,6 +57,22 @@ export default function ProfileScreen() {
 
   const patch = (k: keyof Profile, v: string) =>
     setProfile((p) => ({ ...p, [k]: v }));
+
+  const goToChangePassword = () => {
+    const state = navigation.getState();
+    const canHere = Array.isArray(state?.routeNames) && state.routeNames.includes('ChangePassword');
+
+    if (canHere) {
+      // mismo stack (PeoplePrivateStack)
+      // usa push para garantizar navegación aunque ya estés en esa ruta
+      (navigation as any).push('ChangePassword');
+    } else {
+      // navegar desde el Tab hacia el stack hijo
+      (navigation.getParent() as any)?.navigate('PerfilTab', {
+        screen: 'ChangePassword',
+      });
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -115,7 +143,7 @@ export default function ProfileScreen() {
           <GhostButton
             label="Actualizar contraseña"
             icon="shield-checkmark-outline"
-            onPress={() => console.log('password')}
+            onPress={goToChangePassword}
             kind="primary"
           />
         </View>

@@ -35,12 +35,27 @@ export const styles = StyleSheet.create({
 
   modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center', padding: 18 },
   modalCard: { width: '100%', backgroundColor: '#fff', borderRadius: 16, padding: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '900', color: '#1f3b53', marginBottom: 8 },
+  modalTitle: { fontSize: 18, fontWeight: '900', color: '#1f3b53', marginBottom: 6 },
   modalValue: { color: '#0e2e42' },
+  metaLine: { color: '#26455A', marginTop: 2 },
+  linkLine: { color: '#2F6D8B', marginTop: 4 },
+
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
   actionBtn: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, backgroundColor: '#e6eef6' },
   primary: { backgroundColor: '#4F7FA5' },
   actionText: { color: '#0e2e42', fontWeight: '700' },
+
+  confirmBtn: { flexGrow: 1, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 10, backgroundColor: '#2F6D8B' },
+  confirmText: { color: '#fff', fontWeight: '800', textAlign: 'center' },
+
   btn: { marginTop: 12, backgroundColor: '#4F7FA5', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10 },
   btnText: { color: '#fff', fontWeight: '800' },
+
+  // Éxito
+  successCard: { width: '100%', backgroundColor: '#E7F4FF', borderRadius: 16, padding: 18, alignItems: 'center' },
+  successTitle: { fontSize: 18, fontWeight: '900', color: '#174B73', marginBottom: 8, textAlign: 'center' },
+  successIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#2F7DD3', alignItems: 'center', justifyContent: 'center', marginVertical: 8 },
+  successMsg: { color: '#174B73', textAlign: 'center', marginBottom: 14 },
+  successBtn: { backgroundColor: '#2F6D8B', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 18, alignSelf: 'stretch' },
+  successBtnText: { color: '#fff', fontWeight: '800', textAlign: 'center' },
 });

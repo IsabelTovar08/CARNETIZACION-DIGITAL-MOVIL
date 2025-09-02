@@ -15,7 +15,8 @@ export type PrivateStackParamList = {
   Perfil: undefined;
   Notificaciones: undefined;
   PastEvents: undefined;
-  QrReader: undefined;   //  lector QR
+  QrReader: undefined;
+  ChangePassword: undefined; // nueva ruta para actualizar contraseña
 };
 
 export type AppTabParamList = {

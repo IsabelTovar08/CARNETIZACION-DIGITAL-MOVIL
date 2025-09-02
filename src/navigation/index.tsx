@@ -23,6 +23,7 @@ import NotificationsScreen from '../screens/Profile/Notifications/NotificationsS
 // Extras
 import PastEventsScreen from '../screens/PastEvents';
 import QrReaderScreen from '../screens/QrReader';
+import ChangePasswordScreen from '../screens/ChangePassword';
 
 import MyTabBar from './TabBarIcon';
 
@@ -48,8 +49,6 @@ function HomePrivateStack() {
       <PrivateStack.Screen name="Inicio" component={HomeScreen} />
       <PrivateStack.Screen name="Details" component={DetailsScreen} options={{ title: 'Detalles' }} />
       <PrivateStack.Screen name="PastEvents" component={PastEventsScreen} options={{ headerShown: false }} />
-      {/* Si quieres abrir QR también desde Home, puedes dejarlo aquí duplicado */}
-      {/* <PrivateStack.Screen name="QrReader" component={QrReaderScreen} options={{ headerShown: false }} /> */}
     </PrivateStack.Navigator>
   );
 }
@@ -65,8 +64,9 @@ function DetailsPrivateStack() {
 
 function PeoplePrivateStack() {
   return (
-    <PrivateStack.Navigator>
-      <PrivateStack.Screen name="Perfil" component={ProfileScreen} options={{ headerShown: false }} />
+    <PrivateStack.Navigator screenOptions={{ headerShown: false }}>
+      <PrivateStack.Screen name="Perfil" component={ProfileScreen} />
+      <PrivateStack.Screen name="ChangePassword" component={ChangePasswordScreen} />
     </PrivateStack.Navigator>
   );
 }
