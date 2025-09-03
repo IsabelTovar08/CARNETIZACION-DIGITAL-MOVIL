@@ -11,7 +11,7 @@ const SHADOW =
     : { elevation: 10 };
 
 export const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ffffffff' },
+  container: { flex: 1,},
   bgFull: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
 
   // Botón de retroceso (como el header, pero custom)

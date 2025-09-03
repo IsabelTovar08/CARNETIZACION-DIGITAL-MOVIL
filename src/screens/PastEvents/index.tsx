@@ -1,84 +1,94 @@
-import React, { useState, useCallback } from 'react';
+// PastEventsScreen.tsx
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   SafeAreaView,
   View,
   Text,
   ImageBackground,
   TouchableOpacity,
-  ScrollView,
   Image,
   StatusBar,
+  ActivityIndicator,
+  FlatList,
+  ListRenderItem,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import AuthCard from '../../components/AuthCard';
 import { styles } from './PastEvents.styles';
+import { ApiService } from '../../services/api';
+import { EventItem } from '../../types/event';
 
 const BG = require('../../img/fondo.png');
 
+// Imágenes locales (fallback)
 const IMG_IA    = require('../../img/ia.png');
 const IMG_GASTO = require('../../img/gasto.png');
 const IMG_JAVA  = require('../../img/java.png');
 const IMG_SAL   = require('../../img/sal.png');
 
-type EventItem = {
-  id: string;
-  title: string;
-  date: string;
-  start: string;
-  end: string;
-  img: any;
-  desc: string;
-};
+// 👇 Tu ApiService solo recibe la entidad
+export const EventsApi = new ApiService<EventItem, EventItem>('events');
 
-const EVENTS: EventItem[] = [
-  {
-    id: '1',
-    title: 'Conferencia de Inteligencia artificial',
-    date: '11/05/2025',
-    start: '11:00 a.m',
-    end: '13:00 p.m',
-    img: IMG_IA,
-    desc:
-      '¡Descubre el fascinante mundo de la inteligencia artificial! ' +
-      'Este evento está diseñado para aprendices y entusiastas que desean iniciarse en una de las áreas más revolucionarias.',
-  },
-  {
-    id: '2',
-    title: 'Conferencia de conceptos',
-    date: '20/06/2025',
-    start: '08:30 a.m',
-    end: '10:00 a.m',
-    img: IMG_GASTO,
-    desc:
-      'Repaso ágil de conceptos base de programación y buenas prácticas para fortalecer tu lógica y claridad al codificar.',
-  },
-  {
-    id: '3',
-    title: 'Taller de Java',
-    date: '01/07/2025',
-    start: '02:00 p.m',
-    end: '05:00 p.m',
-    img: IMG_JAVA,
-    desc:
-      'Construye una app completa en Java paso a paso: desde colecciones hasta manejo de errores y pruebas.',
-  },
-  {
-    id: '4',
-    title: 'Seminario de UX',
-    date: '15/07/2025',
-    start: '09:00 a.m',
-    end: '12:00 p.m',
-    img: IMG_SAL,
-    desc:
-      'Explora fundamentos de UX/UI: jerarquía visual, accesibilidad y microinteracciones con ejemplos prácticos.',
-  },
-];
+// Utilidad simple para parsear fecha dd/MM/yyyy a Date
+const parseDate = (ddMMyyyy: string) => {
+  // Comentario (ES): asume formato "dd/MM/yyyy"
+  const [dd, mm, yyyy] = ddMMyyyy.split('/').map(Number);
+  return new Date(yyyy, (mm ?? 1) - 1, dd ?? 1);
+};
 
 export default function PastEventsScreen() {
   const navigation = useNavigation();
+
+  // Estado remoto
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Modal
   const [showModal, setShowModal] = useState(false);
   const [selected, setSelected] = useState<EventItem | null>(null);
+
+  // Carga inicial (sin token)
+  const fetchAll = useCallback(async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      // Comentario (ES): asumiendo ApiResponse<EventItem[]>
+      const resp = await EventsApi.getAll(); // 👈 sin token
+      const list = (resp?.data ?? []) as EventItem[];
+
+      // Filtrar solo pasados y ordenar por fecha descendente
+      const today = new Date();
+      const past = list
+        .filter(e => {
+          if (!e?.date) return false;
+          return parseDate(e.date) < today;
+        })
+        .sort((a, b) => +parseDate(b.date) - +parseDate(a.date));
+
+      setEvents(past);
+    } catch (e: any) {
+      setError(e?.message ?? 'Error al cargar eventos');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchAll();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchAll]);
 
   const openEvent = useCallback((ev: EventItem) => {
     setSelected(ev);
@@ -89,6 +99,44 @@ export default function PastEventsScreen() {
     setShowModal(false);
     setSelected(null);
   }, []);
+
+  const renderItem: ListRenderItem<EventItem> = useCallback(({ item }) => {
+    // Comentario (ES): usa imageUrl si viene del backend, si no fallback local
+    const source =
+      (item as any).imageUrl
+        ? { uri: (item as any).imageUrl as string }
+        : (item.img ?? IMG_IA);
+
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        activeOpacity={0.85}
+        onPress={() => openEvent(item)}
+      >
+        <Image source={source} style={styles.cardImg} />
+        <View style={styles.cardBody}>
+          <Text style={styles.cardTitle}>{item.title}</Text>
+          <View style={styles.row}>
+            <Text style={styles.meta}>Fecha: {item.date}</Text>
+          </View>
+          <View style={styles.rowSpace}>
+            <Text style={styles.meta}>Hora inicio: {item.start}</Text>
+            <Text style={styles.meta}>Hora Fin: {item.end}</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  }, [openEvent]);
+
+  const keyExtractor = useCallback((ev: EventItem) => String(ev.id), []);
+
+  const ListEmpty = useMemo(() => (
+    <View style={{ padding: 24, alignItems: 'center' }}>
+      <Text style={[styles.meta, { opacity: 0.7 }]}>
+        No hay eventos pasados.
+      </Text>
+    </View>
+  ), []);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -110,42 +158,46 @@ export default function PastEventsScreen() {
           <View style={styles.headerSpacer} />
         </View>
 
+        {/* Estados */}
+        {loading && (
+          <View style={{ paddingTop: 24 }}>
+            <ActivityIndicator />
+          </View>
+        )}
+        {!!error && (
+          <View style={{ padding: 16 }}>
+            <Text style={{ color: '#ff6b6b' }}>{error}</Text>
+          </View>
+        )}
+
         {/* Listado */}
-        <ScrollView contentContainerStyle={styles.list}>
-          {EVENTS.map(ev => (
-            <TouchableOpacity key={ev.id} style={styles.card} activeOpacity={0.85} onPress={() => openEvent(ev)}>
-              <Image source={ev.img} style={styles.cardImg} />
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle}>{ev.title}</Text>
-                <View style={styles.row}>
-                  <Text style={styles.meta}>Fecha: {ev.date}</Text>
-                </View>
-                <View style={styles.rowSpace}>
-                  <Text style={styles.meta}>Hora inicio: {ev.start}</Text>
-                  <Text style={styles.meta}>Hora Fin: {ev.end}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-          <View style={styles.footerSpace} />
-        </ScrollView>
+        <FlatList
+          contentContainerStyle={styles.list}
+          data={events}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          ListEmptyComponent={!loading ? ListEmpty : null}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        />
       </ImageBackground>
 
-      {/* Modal detalle — solo se cierra con la X del AuthCard */}
+      {/* Modal detalle */}
       <AuthCard visible={showModal} onClose={closeModal} logoSource={undefined}>
         {!!selected && (
           <View>
-            {/* Flecha interna eliminada */}
             <Text style={styles.modalEyebrow}>Evento</Text>
             <Text style={styles.modalTitle}>{selected.title}</Text>
-
-            <Image source={selected.img} style={styles.modalImg} />
-
+            <Image
+              source={(selected as any).imageUrl ? { uri: (selected as any).imageUrl } : (selected.img ?? IMG_GASTO)}
+              style={styles.modalImg}
+            />
             <Text style={styles.modalSection}>Descripción</Text>
             <View style={styles.modalBox}>
-              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-                <Text style={styles.modalDesc}>{selected.desc}</Text>
-              </ScrollView>
+              <Text style={styles.modalDesc}>
+                {(selected as any).description ?? selected.desc}
+              </Text>
             </View>
           </View>
         )}

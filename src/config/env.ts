@@ -1,0 +1,4 @@
+export const ENV = {
+  API_BASE: 'http://192.168.137.1:8008/api', 
+  DEBUG_HTTP: true,
+};
