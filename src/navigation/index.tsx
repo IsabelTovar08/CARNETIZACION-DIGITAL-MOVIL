@@ -12,6 +12,9 @@ import LoginScreen from '../screens/Login/LoginScreen';
 import VerifyPasswordScreen from '../screens/VerifyPassword';
 import VerifyResultScreen from '../screens/VerifyResult';
 import ResetPasswordScreen from '../screens/ResetPassword';
+// arriba con los demás imports de screens
+import CarnetsScreen from '../screens/Carnets';  // ⬅️ nuevo
+
 
 // Privado
 import HomeScreen from '../screens/Home/HomeScreen';
@@ -26,6 +29,8 @@ import QrReaderScreen from '../screens/QrReader';
 import ChangePasswordScreen from '../screens/ChangePassword';
 
 import MyTabBar from './TabBarIcon';
+
+
 
 const PublicStack = createNativeStackNavigator<PublicStackParamList>();
 const PrivateStack = createNativeStackNavigator<PrivateStackParamList>();
@@ -49,6 +54,8 @@ function HomePrivateStack() {
       <PrivateStack.Screen name="Inicio" component={HomeScreen} />
       <PrivateStack.Screen name="Details" component={DetailsScreen} options={{ title: 'Detalles' }} />
       <PrivateStack.Screen name="PastEvents" component={PastEventsScreen} options={{ headerShown: false }} />
+      {/* ⬇️ MOVIDO AQUÍ: el lector QR debe vivir en el mismo stack desde el que navegas (Home) */}
+      <PrivateStack.Screen name="QrReader" component={QrReaderScreen} options={{ headerShown: false }} />
     </PrivateStack.Navigator>
   );
 }
@@ -56,11 +63,15 @@ function HomePrivateStack() {
 function DetailsPrivateStack() {
   return (
     <PrivateStack.Navigator screenOptions={{ headerShown: true }}>
-      <PrivateStack.Screen name="Details" component={DetailsScreen} />
-      <PrivateStack.Screen name="QrReader" component={QrReaderScreen} options={{ headerShown: false }} />
+      <PrivateStack.Screen
+        name="Details"
+        component={CarnetsScreen}        // ← ahora el tab "Details" muestra Carnets
+        options={{ title: 'Tus Carnets' }}
+      />
     </PrivateStack.Navigator>
   );
 }
+
 
 function PeoplePrivateStack() {
   return (

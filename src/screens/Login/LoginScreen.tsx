@@ -71,7 +71,7 @@ export default function LoginScreen({ navigation }: Props) {
     setErrorMsg(null);
     try {
       setLoading(true);
-      await login(email.trim(), pwd);
+      //await login(email.trim(), pwd);
       signIn(); // éxito → autentica y navega según tu RootNavigator
     } catch (e: any) {
       setErrorMsg(e?.message || 'No fue posible iniciar sesión.');

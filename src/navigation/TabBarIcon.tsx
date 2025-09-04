@@ -5,14 +5,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { myTabBarContainer, myTabBarIndicator, myTabBarItem } from './tabbar.styles';
 
 const ICONS: Record<string, { active: React.ComponentProps<typeof Ionicons>['name']; inactive: React.ComponentProps<typeof Ionicons>['name'] }> = {
-  HomeTab:     { active: 'home',     inactive: 'home-outline' },
-  DetailsTab:  { active: 'qr-code',     inactive: 'qr-code-outline' },
-  PerfilTab: { active: 'person', inactive: 'person-outline' },
-  NotificationsTab: { active: 'notifications', inactive: 'notifications-outline' },
-
+  HomeTab:        { active: 'home',        inactive: 'home-outline' },
+  DetailsTab:     { active: 'person',      inactive: 'person-outline' }, // ← actualizado
+  PerfilTab:      { active: 'person',      inactive: 'person-outline' },
+  NotificationsTab:{ active: 'notifications', inactive: 'notifications-outline' },
 };
 
-const INDICATOR_TWEAK = Platform.select({ android: -1, ios: 0, default: 0 }) ?? 0; // positivo = mueve a la derecha
+const INDICATOR_TWEAK = Platform.select({ android: -1, ios: 0, default: 0 }) ?? 0;
 const ICON_SIZE = 26;
 const H_PAD = 12;
 
@@ -22,7 +21,6 @@ export default function MyTabBar({ state, navigation }: any) {
   const translateX = useSharedValue(0);
   const indicatorWidth = useSharedValue(ICON_SIZE + H_PAD * 2);
 
-  // Posición inicial con fallback (cuando aún no tenemos medidas de íconos)
   const onContainerLayout = (e: any) => {
     const containerW = e.nativeEvent.layout.width;
     const count = state.routes.length;
@@ -30,7 +28,7 @@ export default function MyTabBar({ state, navigation }: any) {
     const indW = ICON_SIZE + H_PAD * 2;
     indicatorWidth.value = indW;
     const left = (w * state.index + w / 2) - (indW / 2) + INDICATOR_TWEAK;
-    translateX.value = left; // sin animación para que arranque directo
+    translateX.value = left;
   };
 
   const onItemLayout = (i: number) => (e: LayoutChangeEvent) => {

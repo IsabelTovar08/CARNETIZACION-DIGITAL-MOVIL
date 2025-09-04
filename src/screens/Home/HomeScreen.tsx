@@ -13,7 +13,6 @@ import SearchBar from '../../components/SearchBar/SearchBar';
 
 type Props = NativeStackScreenProps<PrivateStackParamList, 'Inicio'>;
 
-// Data simulada; reemplaza por tu fetch/API
 const ATTENDANCE = [
   { id: '1', icon: 'logo-electron',        title: 'Conferencia de Inteligencia artificial', chip: '1h' },
   { id: '2', icon: 'cafe-outline',         title: 'Conceptos básicos en Java',              chip: '3h' },
@@ -27,19 +26,19 @@ const ATTENDANCE = [
 export default function HomeScreen({ navigation }: Props) {
   const [query, setQuery] = useState('');
 
-  // Navegar a la pantalla de Eventos Pasados
   const goToPastEvents = useCallback(() => {
     navigation.navigate('PastEvents');
   }, [navigation]);
 
-  // Header de la lista
+  const goToQrReader = useCallback(() => {
+    navigation.navigate('QrReader');
+  }, [navigation]);
+
   const listHeader = useMemo(
     () => (
       <View>
-        {/* Header con avatar */}
         <ProfileHeader />
 
-        {/* Buscador */}
         <View style={styles.searchWrap}>
           <SearchBar
             value={query}
@@ -49,26 +48,23 @@ export default function HomeScreen({ navigation }: Props) {
           />
         </View>
 
-        {/* Tarjeta principal (pendientes) */}
         <HighlightCard />
 
-        {/* "Asistir" + "Ver más" */}
         <SectionHeader
           title="Asistir"
           leftBadge={<Text style={styles.badge}>＋</Text>}
-          onAction={goToPastEvents}   // 👈 navega a PastEvents
+          onLeftPress={goToQrReader}  // ← tocar “Asistir” abre el lector QR
+          onAction={goToPastEvents}   // ← “Ver más” va a Eventos Pasados
         />
 
-        {/* Últimas asistencias */}
         <View style={styles.sectionTitleWrap}>
           <Text style={styles.sectionTitle}>Últimas asistencias</Text>
         </View>
       </View>
     ),
-    [query, goToPastEvents]
+    [query, goToPastEvents, goToQrReader]
   );
 
-  // Filtro por búsqueda
   const data = useMemo(
     () => ATTENDANCE.filter(x => x.title.toLowerCase().includes(query.toLowerCase())),
     [query]
