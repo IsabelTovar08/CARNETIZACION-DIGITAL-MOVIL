@@ -7,17 +7,20 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PublicStackParamList } from '../../navigation/types';
 import { styles } from './VerifyPassword.styles';
+import { authService } from '../../services/auth/authService';
+import { useAuth } from '../../services/auth/AuthContext';
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'VerifyPassword'>;
 
-const OTP_LEN = 6; // 6 dígitos
+const OTP_LEN = 5; // 6 dígitos
 
 // Cambia estas rutas por tus assets reales
 const BG_SOURCE = require('../../img/fondo-login.png');
 const LOCK_SOURCE = require('../../img/candado.png');
 
 export default function VerifyPasswordScreen({ route, navigation }: Props) {
-  const { email } = route.params;
+  const { signIn } = useAuth();
+  const { email, userId } = route.params;
 
   const [values, setValues] = useState<string[]>(Array.from({ length: OTP_LEN }, () => ''));
   const inputs = useRef<Array<TextInput | null>>([]);
@@ -58,7 +61,11 @@ export default function VerifyPasswordScreen({ route, navigation }: Props) {
       return;
     }
     // SOLO FRONT: navega siempre al tener 6 dígitos
-    navigation.navigate('VerifyResult', { email });
+    authService.verifyCode(userId, code).then(res => {
+      signIn();
+    }).catch(err => {
+      setErrorText(err?.message || 'Código inválido. Intenta de nuevo.');
+    });
   };
 
   return (

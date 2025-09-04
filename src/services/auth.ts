@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-import { request } from './request';
+import { request } from './http/request';
 
 const TOKEN_KEY = 'auth_token';
 

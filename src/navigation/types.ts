@@ -3,7 +3,7 @@
 export type PublicStackParamList = {
   Landing: undefined;
   Login: undefined;
-  VerifyPassword: { email: string };
+  VerifyPassword: { email: string, userId?: number };
   VerifyResult: { email: string };
   ResetPassword: { email: string };
   PastEvents: undefined;

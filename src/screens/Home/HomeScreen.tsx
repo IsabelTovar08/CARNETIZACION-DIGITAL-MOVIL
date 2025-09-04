@@ -1,5 +1,5 @@
 // src/screens/Home/HomeScreen.tsx
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { View, Text, SafeAreaView, FlatList } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { styles } from './Home.styles';
@@ -10,6 +10,8 @@ import HighlightCard from '../../components/HighlightCard/HighlightCard';
 import ProfileHeader from '../../components/ProfileHeader/ProfileHeader';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
 import SearchBar from '../../components/SearchBar/SearchBar';
+import { ApiService } from '../../services/api';
+import { EventItem } from '../../types/event';
 
 type Props = NativeStackScreenProps<PrivateStackParamList, 'Inicio'>;
 
@@ -24,13 +26,40 @@ const ATTENDANCE = [
   { id: '7', icon: 'school-outline',       title: 'Optimización de consultas SQL',          chip: 'Mañana' },
 ];
 
+export const AttendancesApi = new ApiService<any, any>('attendance');
+
+
 export default function HomeScreen({ navigation }: Props) {
+    const [Attendances, setAttendances] = useState<any[]>([]);
+
   const [query, setQuery] = useState('');
 
+  // Navegar a la pantalla de Eventos Pasados
   // Navegar a la pantalla de Eventos Pasados
   const goToPastEvents = useCallback(() => {
     navigation.navigate('PastEvents');
   }, [navigation]);
+
+
+    const fetchAll = useCallback(async () => {
+     
+      try {
+        // asumiendo ApiResponse<EventItem[]>
+        const resp = await AttendancesApi.getAll(); // 👈 sin token
+        const list = (resp?.data ?? []) as any[];
+        console.log('asistencias totales:', list);
+        setAttendances(list);
+  
+        
+      }
+      catch (e) {
+        console.error('Error al cargar eventos:', e);
+      }
+    }, []);
+  
+    useEffect(() => {
+      fetchAll();
+    }, [fetchAll]);
 
   // Header de la lista
   const listHeader = useMemo(
@@ -77,13 +106,13 @@ export default function HomeScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <FlatList
-        data={data}
+        data={Attendances}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={listHeader}
         ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
         renderItem={({ item }) => (
-          <AttendanceCard icon={item.icon as any} title={item.title} chip={item.chip} />
+          <AttendanceCard icon={item.icon as any} title={item.eventName} chip={item.chip} />
         )}
         ListFooterComponent={<View style={{ height: 24 }} />}
         showsVerticalScrollIndicator={false}

@@ -29,11 +29,11 @@ const IMG_JAVA  = require('../../img/java.png');
 const IMG_SAL   = require('../../img/sal.png');
 
 // 👇 Tu ApiService solo recibe la entidad
-export const EventsApi = new ApiService<EventItem, EventItem>('events');
+export const EventsApi = new ApiService<EventItem, EventItem>('event');
 
 // Utilidad simple para parsear fecha dd/MM/yyyy a Date
 const parseDate = (ddMMyyyy: string) => {
-  // Comentario (ES): asume formato "dd/MM/yyyy"
+  // asume formato "dd/MM/yyyy"
   const [dd, mm, yyyy] = ddMMyyyy.split('/').map(Number);
   return new Date(yyyy, (mm ?? 1) - 1, dd ?? 1);
 };
@@ -56,9 +56,11 @@ export default function PastEventsScreen() {
     setError(null);
     setLoading(true);
     try {
-      // Comentario (ES): asumiendo ApiResponse<EventItem[]>
+      // asumiendo ApiResponse<EventItem[]>
       const resp = await EventsApi.getAll(); // 👈 sin token
       const list = (resp?.data ?? []) as EventItem[];
+      console.log('Eventos totales:', list);
+      setEvents(list);
 
       // Filtrar solo pasados y ordenar por fecha descendente
       const today = new Date();
@@ -69,7 +71,7 @@ export default function PastEventsScreen() {
         })
         .sort((a, b) => +parseDate(b.date) - +parseDate(a.date));
 
-      setEvents(past);
+      // setEvents(past);
     } catch (e: any) {
       setError(e?.message ?? 'Error al cargar eventos');
     } finally {
@@ -101,7 +103,7 @@ export default function PastEventsScreen() {
   }, []);
 
   const renderItem: ListRenderItem<EventItem> = useCallback(({ item }) => {
-    // Comentario (ES): usa imageUrl si viene del backend, si no fallback local
+    // usa imageUrl si viene del backend, si no fallback local
     const source =
       (item as any).imageUrl
         ? { uri: (item as any).imageUrl as string }
@@ -115,13 +117,13 @@ export default function PastEventsScreen() {
       >
         <Image source={source} style={styles.cardImg} />
         <View style={styles.cardBody}>
-          <Text style={styles.cardTitle}>{item.title}</Text>
+          <Text style={styles.cardTitle}>{item.name}</Text>
           <View style={styles.row}>
             <Text style={styles.meta}>Fecha: {item.date}</Text>
           </View>
           <View style={styles.rowSpace}>
-            <Text style={styles.meta}>Hora inicio: {item.start}</Text>
-            <Text style={styles.meta}>Hora Fin: {item.end}</Text>
+            <Text style={styles.meta}>Hora inicio: {item.eventStart}</Text>
+            <Text style={styles.meta}>Hora Fin: {item.eventEnd}</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -188,7 +190,7 @@ export default function PastEventsScreen() {
         {!!selected && (
           <View>
             <Text style={styles.modalEyebrow}>Evento</Text>
-            <Text style={styles.modalTitle}>{selected.title}</Text>
+            <Text style={styles.modalTitle}>{selected.name}</Text>
             <Image
               source={(selected as any).imageUrl ? { uri: (selected as any).imageUrl } : (selected.img ?? IMG_GASTO)}
               style={styles.modalImg}

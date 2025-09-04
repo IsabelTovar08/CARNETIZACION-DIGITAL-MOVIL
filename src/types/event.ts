@@ -1,9 +1,9 @@
 export type EventItem = {
   id: string;
-  title: string;
+  name: string;
   date: string;
-  start: string;
-  end: string;
+  eventStart: string;
+  eventEnd: string;
   img: any;
   desc: string;
 };

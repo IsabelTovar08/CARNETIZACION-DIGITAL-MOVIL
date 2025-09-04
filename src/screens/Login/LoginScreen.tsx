@@ -22,7 +22,7 @@ import { PublicStackParamList } from '../../navigation/types';
 // Components reutilizables (ya en tu carpeta components)
 import AuthCard from '../../components/AuthCard';
 import ForgotPasswordForm from '../../components/ForgotPasswordForm';
-import { login } from '../../services/auth';
+import { authService } from '../../services/auth/authService';
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'Login'>;
 
@@ -71,8 +71,11 @@ export default function LoginScreen({ navigation }: Props) {
     setErrorMsg(null);
     try {
       setLoading(true);
-      await login(email.trim(), pwd);
-      signIn(); // éxito → autentica y navega según tu RootNavigator
+      var res = await authService.login(email.trim(), pwd);
+      
+      // signIn(); // éxito → autentica y navega según tu RootNavigator
+      navigation.navigate('VerifyPassword', { email: email.trim(), userId: res.data.userId  });
+
     } catch (e: any) {
       setErrorMsg(e?.message || 'No fue posible iniciar sesión.');
     } finally {
