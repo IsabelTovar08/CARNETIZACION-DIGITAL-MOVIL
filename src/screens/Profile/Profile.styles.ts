@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import  colors  from '../../theme/colors';
+import colors from '../../theme/colors';
 
 export const colorsA = {
   bg: '#0B1A3AFF',
@@ -34,6 +34,7 @@ export const styles = StyleSheet.create({
     borderBottomRightRadius: 999,
     transform: [{ scaleX: 1.1 }],
   },
+
   avatarWrap: {
     marginTop: 32,
     width: 112,
@@ -59,6 +60,14 @@ export const styles = StyleSheet.create({
     borderColor: colorsA.ring,
     backgroundColor: '#e2e8f0',
   },
+  avatarEditing: {
+    borderColor: colorsA.primary,
+    shadowColor: colorsA.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+
+  /* Botón flotante principal (lápiz/check) */
   miniAction: {
     position: 'absolute',
     right: -2,
@@ -71,8 +80,16 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#e6eef5',
+    zIndex: 2,
   },
   miniActionActive: { backgroundColor: '#b8f1d8' },
+
+  /* Camarita al lado del lápiz */
+  miniActionCamera: {
+    right: 36, // “al ladito”
+    bottom: -2,
+  },
+
   title: {
     marginTop: 12,
     fontSize: 22,

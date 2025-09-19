@@ -8,8 +8,10 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -42,36 +44,75 @@ export default function ProfileScreen() {
     city: 'Neiva, Huila',
   });
 
+  const [avatarUri, setAvatarUri] = useState('https://i.pravatar.cc/200?img=12');
   const [isEditing, setIsEditing] = useState(false);
 
   const birthVisible = useMemo(() => {
     try {
       const d = new Date(profile.birthDate);
-      return `${d.getDate().toString().padStart(2, '0')}/${
-        (d.getMonth() + 1).toString().padStart(2, '0')
-      }/${d.getFullYear()}`;
+      return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}/${d.getFullYear()}`;
     } catch {
       return profile.birthDate;
     }
   }, [profile.birthDate]);
 
-  const patch = (k: keyof Profile, v: string) =>
-    setProfile((p) => ({ ...p, [k]: v }));
+  const patch = (k: keyof Profile, v: string) => setProfile((p) => ({ ...p, [k]: v }));
 
   const goToChangePassword = () => {
     const state = navigation.getState();
     const canHere = Array.isArray(state?.routeNames) && state.routeNames.includes('ChangePassword');
 
-    if (canHere) {
-      // mismo stack (PeoplePrivateStack)
-      // usa push para garantizar navegación aunque ya estés en esa ruta
-      (navigation as any).push('ChangePassword');
-    } else {
-      // navegar desde el Tab hacia el stack hijo
-      (navigation.getParent() as any)?.navigate('PerfilTab', {
-        screen: 'ChangePassword',
-      });
+    if (canHere) (navigation as any).push('ChangePassword');
+    else (navigation.getParent() as any)?.navigate('PerfilTab', { screen: 'ChangePassword' });
+  };
+
+  // --- Helpers de selección ---
+  const applyAssetUri = (result: ImagePicker.ImagePickerResult) => {
+    if (!result.canceled && result.assets?.length) {
+      setAvatarUri(result.assets[0].uri);
+      // TODO opcional: subir al backend con multipart/form-data
     }
+  };
+
+  const pickFromGallery = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesito acceso a tus fotos para actualizar el avatar.');
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+      selectionLimit: 1,
+    });
+    applyAssetUri(res);
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesito acceso a la cámara para tomar una foto.');
+      return;
+    }
+    const res = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    applyAssetUri(res);
+  };
+
+  // Menú para elegir origen (cámara/galería)
+  const chooseImageSource = () => {
+    Alert.alert('Actualizar foto', 'Elige el origen de la imagen', [
+      { text: 'Cámara', onPress: takePhoto },
+      { text: 'Galería', onPress: pickFromGallery },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
   };
 
   return (
@@ -80,23 +121,58 @@ export default function ProfileScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.wave} />
+
           <View style={styles.avatarWrap}>
             <View style={styles.avatarShadow} />
-            <Image
-              source={{ uri: 'https://i.pravatar.cc/200?img=12' }}
-              style={styles.avatar}
-            />
+
+            {/* Tocar avatar (solo ed.) -> Galería directa */}
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={isEditing ? pickFromGallery : undefined}
+              disabled={!isEditing}
+              accessibilityRole="imagebutton"
+              accessibilityLabel={isEditing ? 'Cambiar foto de perfil' : 'Foto de perfil'}
+            >
+              <Image
+                source={{ uri: avatarUri }}
+                style={[styles.avatar, isEditing && styles.avatarEditing]}
+              />
+            </TouchableOpacity>
+
+            {/* Botón lápiz/check: alterna edición */}
             <TouchableOpacity
               onPress={() => setIsEditing((e) => !e)}
               activeOpacity={0.9}
               style={[styles.miniAction, isEditing && styles.miniActionActive]}
+              accessibilityRole="button"
+              accessibilityLabel={isEditing ? 'Guardar cambios' : 'Editar perfil'}
             >
               <Ionicons name={isEditing ? 'checkmark' : 'pencil-sharp'} size={22} />
             </TouchableOpacity>
+
+            {/* Camarita al lado: abre menú Cámara/Galería */}
+            <TouchableOpacity
+              onPress={isEditing ? chooseImageSource : undefined}
+              activeOpacity={0.9}
+              disabled={!isEditing}
+              style={[
+                styles.miniAction,
+                styles.miniActionCamera,
+                isEditing && styles.miniActionActive,
+                !isEditing && { opacity: 0.5 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Elegir cámara o galería"
+            >
+              <Ionicons name="camera" size={18} />
+            </TouchableOpacity>
           </View>
+
           <Text style={styles.title}>Perfil</Text>
           <Text style={styles.subtitle}>
-            {isEditing ? 'Editando datos' : 'Información personal'}
+            {isEditing
+              ? 'Editando datos (toca la foto, la camarita o elige una opción)'
+              : 'Información personal'}
           </Text>
         </View>
 
@@ -134,12 +210,7 @@ export default function ProfileScreen() {
 
         {/* Actions */}
         <View style={styles.actionsRow}>
-          <GhostButton
-            label="Cerrar sesión"
-            icon="log-out-outline"
-            onPress={signOut}
-            kind="danger"
-          />
+          <GhostButton label="Cerrar sesión" icon="log-out-outline" onPress={signOut} kind="danger" />
           <GhostButton
             label="Actualizar contraseña"
             icon="shield-checkmark-outline"
@@ -152,6 +223,8 @@ export default function ProfileScreen() {
     </SafeAreaView>
   );
 }
+
+/* ---------- componentes internos (se quedan aquí) ---------- */
 
 type FieldProps = React.ComponentProps<typeof TextInput> & {
   label: string;
@@ -188,25 +261,15 @@ function GhostButton({
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[
-        styles.ghostBtn,
-        kind === 'primary' ? styles.ghostPrimary : styles.ghostDanger,
-      ]}
+      activeOpacity={0.9}
+      style={[styles.ghostBtn, kind === 'primary' ? styles.ghostPrimary : styles.ghostDanger]}
     >
       <Ionicons
         name={icon}
         size={18}
-        style={[
-          styles.ghostIcon,
-          kind === 'primary' ? styles.primaryTxt : styles.dangerTxt,
-        ]}
+        style={[styles.ghostIcon, kind === 'primary' ? styles.primaryTxt : styles.dangerTxt]}
       />
-      <Text
-        style={[
-          styles.ghostLabel,
-          kind === 'primary' ? styles.primaryTxt : styles.dangerTxt,
-        ]}
-      >
+      <Text style={[styles.ghostLabel, kind === 'primary' ? styles.primaryTxt : styles.dangerTxt]}>
         {label}
       </Text>
     </TouchableOpacity>
