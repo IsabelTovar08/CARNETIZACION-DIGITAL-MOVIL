@@ -1,0 +1,17 @@
+export default {
+  // bg: '#0b1220',
+  // text: '#111827',
+  dim: '#6b7280',
+  // primary: '#111827',
+  bg: '#F2F7FA',
+  card: '#FFFFFF',
+  primary: '#2F6D8B',
+  primarySoft: '#5A90AA',
+  accent: '#87D1A0',
+  text: '#243E4A',
+  textSoft: '#6B8596',
+  border: '#E6EEF3',
+  blueCard: '#4E86A5',
+  chip: '#EEF5F8',
+  shadow: 'rgba(0,0,0,0.06)',
+};
