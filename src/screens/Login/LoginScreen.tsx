@@ -39,18 +39,6 @@ export default function LoginScreen({ navigation }: Props) {
 
   const { signIn } = useAuth();
 
-  // Oculta el header del Stack SOLO aquí
-  useLayoutEffect(() => {
-    navigation.setOptions({ headerShown: false });
-  }, [navigation]);
-
-  // Oculta la StatusBar cuando esta pantalla está enfocada
-  useFocusEffect(
-    useCallback(() => {
-      StatusBar.setHidden(true, 'fade');
-      return () => StatusBar.setHidden(false, 'fade');
-    }, [])
-  );
 
   // Retroceder (si no hay historial → Home)
   const onBack = () => {
@@ -75,6 +63,8 @@ export default function LoginScreen({ navigation }: Props) {
       
       // signIn(); // éxito → autentica y navega según tu RootNavigator
       navigation.navigate('VerifyPassword', { email: email.trim(), userId: res.data.userId  });
+      // signIn();
+
 
     } catch (e: any) {
       setErrorMsg(e?.message || 'No fue posible iniciar sesión.');

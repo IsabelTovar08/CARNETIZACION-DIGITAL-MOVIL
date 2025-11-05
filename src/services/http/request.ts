@@ -139,7 +139,7 @@ async function doRefresh(): Promise<string | null> {
 }
 
 /** Devuelve un access token válido; refresca proactivamente si faltan <=30s */
-async function ensureFreshAccessToken(): Promise<string | null> {
+export async function ensureFreshAccessToken(): Promise<string | null> {
   if (isRefreshing && refreshPromise) return refreshPromise;
 
   const token = await tokenStorage.getAccessToken();

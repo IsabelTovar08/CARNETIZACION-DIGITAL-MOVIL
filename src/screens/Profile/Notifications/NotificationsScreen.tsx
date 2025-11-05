@@ -1,49 +1,97 @@
-// screens/Notifications/NotificationsScreen.tsx
-import React from 'react';
+// src/screens/Notifications/NotificationsScreen.tsx
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView, SectionList, View, Text, StyleSheet } from 'react-native';
 import AttendanceCard from '../../../components/AttendanceCard/AttendanceCard';
 import { palette } from '../../../components/AttendanceCard/attendanceCard.styles';
+import { NotificationService } from '../../../services/http/Notifications/NotificationService';
 
-const DATA = [
-  {
-    title: 'Hoy',
-    data: [
-      {
-        id: '1',
-        icon: 'calendar-outline',
-        title: 'Recuerda',
-        subtitle: 'Tienes una charla de “software” hoy a las 10:30 A.M.',
-        chip: '08:00 • May 27',
-        unread: true,
-      },
-      {
-        id: '2',
-        icon: 'school-outline',
-        title: 'Propuesta Sobre Conferencia De Inversiones',
-        subtitle:
-          'Tienes una Propuesta de conferencia de inversiones para el 29 de mayo. ¡Acompáñanos!',
-        chip: '09:00 • May 27',
-      },
-    ],
-  },
-  { title: 'Ayer', data: [
-      {
-        id: '3',
-        icon: 'briefcase-outline',
-        title: 'Conferencia De Normativas Para El Trabajo',
-        subtitle: 'Para el 29 de mayo. ¡Acompáñanos!',
-        chip: '13:00 • May 26',
-      },
-    ],
-  },
-];
+// ✅ Si NO tienes dayjs, puedes comentar esto y usar Date nativo
+// import dayjs from 'dayjs';
+
+const notificationService = new NotificationService<any, any>();
 
 export default function NotificationsScreen() {
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    notificationService
+      .getNotificationsByUserId()
+      .then((response) => {
+        console.log('🔍 Respuesta completa:', response);
+
+        if (response.status && Array.isArray(response.data)) {
+          setNotifications(response.data);
+          console.log('✅ Notificaciones obtenidas:', response.data);
+        } else {
+          console.warn('⚠️ Error al obtener notificaciones:', response.message);
+        }
+      })
+      .catch((error) => {
+        console.error('❌ Error al obtener notificaciones:', error);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // 🔹 Función para verificar si una fecha es hoy
+  const isToday = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
+  };
+
+  // 🔹 Función para verificar si una fecha es ayer
+  const isYesterday = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    return (
+      date.getDate() === yesterday.getDate() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getFullYear() === yesterday.getFullYear()
+    );
+  };
+
+  // 🔹 Agrupamos notificaciones
+  const today = notifications.filter((n) => isToday(n.sendDate));
+  const yesterday = notifications.filter((n) => isYesterday(n.sendDate));
+  const older = notifications.filter(
+    (n) => !isToday(n.sendDate) && !isYesterday(n.sendDate)
+  );
+
+  const sections = [
+    { title: 'Hoy', data: today },
+    { title: 'Ayer', data: yesterday },
+    { title: 'Anteriores', data: older },
+  ].filter((section) => section.data.length > 0);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={s.loadingContainer}>
+        <Text style={s.loadingText}>Cargando notificaciones...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (!notifications.length) {
+    return (
+      <SafeAreaView style={s.loadingContainer}>
+        <Text style={s.loadingText}>No tienes notificaciones.</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }}>
       <SectionList
-        sections={DATA}
-        keyExtractor={(item) => item.id}
+        sections={sections}
+        keyExtractor={(item) => item.notificationId.toString()}
         contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
         renderSectionHeader={({ section }) => (
           <Text style={s.sectionTitle}>{section.title}</Text>
@@ -52,14 +100,14 @@ export default function NotificationsScreen() {
         SectionSeparatorComponent={() => <View style={{ height: 8 }} />}
         renderItem={({ item }) => (
           <AttendanceCard
-            icon={item.icon as any}
+            icon="notifications-outline"
+            key={item.notificationId}
             title={item.title}
-            subtitle={item.subtitle}
-            chip={item.chip}
-            unread={item.unread}
+            subtitle={item.message}
             variant="notification"
             showChevron
-            onPress={() => {}}
+            unread={!item.readDate}
+            onPress={() => console.log('🔔 Notificación seleccionada:', item)}
           />
         )}
       />
@@ -74,5 +122,14 @@ const s = StyleSheet.create({
     color: palette.primary,
     fontWeight: '800',
     fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: palette.bg,
+  },
+  loadingText: {
+    fontSize: 16
   },
 });

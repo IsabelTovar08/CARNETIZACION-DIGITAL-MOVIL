@@ -3,13 +3,13 @@ import { request } from './http/request';
 import { httpWrapper } from './HttpServiceWrapper';
 
 export type ApiResponse<T> = {
-  success: boolean;
+  status: boolean;
   message?: string;
   data?: T;
 };
 
 export class ApiService<TCreate, TListOrDetail> {
-  private base: string;
+  protected base: string;
   constructor(entidad: string) {
     this.base = `/${entidad}`;
   }
