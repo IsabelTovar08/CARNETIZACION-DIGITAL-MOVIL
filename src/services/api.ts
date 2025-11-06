@@ -3,7 +3,8 @@ import { request } from './http/request';
 import { httpWrapper } from './HttpServiceWrapper';
 
 export type ApiResponse<T> = {
-  status: boolean;
+  success?: boolean;
+  status?: boolean;
   message?: string;
   data?: T;
 };

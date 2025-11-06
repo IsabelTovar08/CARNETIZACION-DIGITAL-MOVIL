@@ -1,4 +1,4 @@
-package com.anonymous.rninicio
+package com.anonymous.carnetgo
 
 import android.app.Application
 import android.content.res.Configuration

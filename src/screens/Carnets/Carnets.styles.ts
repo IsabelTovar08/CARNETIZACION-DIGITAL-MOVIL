@@ -2,7 +2,7 @@ import { Dimensions, Platform, StyleSheet } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
-export const CARD_W = Math.min(260, width * 0.7);
+export const CARD_W = Math.min(500, width * 0.7);
 export const CARD_H = CARD_W * 1.38;
 export const GAP = 16;
 

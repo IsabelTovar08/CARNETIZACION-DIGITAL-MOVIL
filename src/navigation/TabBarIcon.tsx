@@ -6,7 +6,8 @@ import { myTabBarContainer, myTabBarIndicator, myTabBarItem } from './tabbar.sty
 
 const ICONS: Record<string, { active: React.ComponentProps<typeof Ionicons>['name']; inactive: React.ComponentProps<typeof Ionicons>['name'] }> = {
   HomeTab:        { active: 'home',        inactive: 'home-outline' },
-  DetailsTab:     { active: 'person',      inactive: 'person-outline' }, // ← actualizado
+  CardTab:     { active: 'id-card',      inactive: 'id-card-outline' },
+  EventsTab:     { active: 'people-circle-sharp',      inactive: 'people-circle-outline' },
   PerfilTab:      { active: 'person',      inactive: 'person-outline' },
   NotificationsTab:{ active: 'notifications', inactive: 'notifications-outline' },
 };

@@ -1,64 +1,170 @@
-import React, { useEffect } from 'react';
-import { View, Text, Image, ActivityIndicator } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Image, TouchableOpacity, Modal, Pressable, Dimensions, findNodeHandle } from 'react-native';
 import { styles } from './profileHeader.styles';
 import { useUser } from '../../services/context/UserContext';
-import { UserService } from '../../services/http/security/UserService';
-import { UserResponse } from '../../models/userProfile';
+import { UserAvatarService } from '../../services/shared/UserAvatarService';
 
 /// <summary>
-/// Encabezado con avatar, nombre real y rol del usuario autenticado.
-/// Si el usuario no está cargado en el contexto, se hace la consulta al backend.
+/// Encabezado reutilizable:
+/// - compact = true: muestra solo el avatar y una burbuja (popover) al hacer click.
+/// - compact = false: muestra avatar, nombre y rol (modo completo).
 /// </summary>
-export default function ProfileHeader() {
+export default function ProfileHeader({ compact = false }: { compact?: boolean }) {
   const { user, loadCurrentUser } = useUser();
-  const userService = new UserService<UserResponse>();
 
   /// <summary>
-  /// Si el usuario aún no existe en el contexto, realiza la consulta a /api/user/me.
+  /// Estado para burbuja (popover).
   /// </summary>
+  const [isVisible, setIsVisible] = useState(false);
+
+  /// <summary>
+  /// Coordenadas del ancla (avatar) en la ventana.
+  /// </summary>
+  const [anchorRect, setAnchorRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+
+  /// <summary>
+  /// Ref al avatar para medir su posición en pantalla.
+  /// </summary>
+  const avatarRef = useRef<View>(null);
+
+  /// <summary>
+  /// Dimensiones de la ventana para calcular límites de la burbuja.
+  /// </summary>
+  const { width: screenWidth } = Dimensions.get('window');
+  const bubbleWidth = 240; // ancho fijo de la burbuja
+
   useEffect(() => {
-    if (!user) {
-      console.log('⚠️ Usuario no encontrado en contexto. Consultando /api/user/me ...');
-      loadCurrentUser(); // carga el usuario en el contexto
-    } else {
-      console.log('✅ Renderizando ProfileHeader con usuario:', user?.userName);
-    }
+    if (!user) loadCurrentUser();
   }, [user]);
 
-  if (!user) {
-    return (
-      <View style={[styles.wrapper, { alignItems: 'center', paddingVertical: 10 }]}>
-        <ActivityIndicator size="small" color="#2F6D8B" />
-        <Text style={{ color: '#666', marginTop: 5 }}>Cargando usuario...</Text>
-      </View>
-    );
-  }
+  if (!user) return null;
+
+  /// <summary>
+  /// Alterna la burbuja: mide coordenadas del avatar y posiciona la burbuja debajo.
+  /// </summary>
+  const toggleBubble = () => {
+    if (!compact) return;
+    if (isVisible) {
+      setIsVisible(false);
+      return;
+    }
+    const node = findNodeHandle(avatarRef.current);
+    if (!node) {
+      setIsVisible((prev) => !prev);
+      return;
+    }
+    // medir en coordenadas absolutas de pantalla (funciona dentro del headerRight)
+    // @ts-ignore - measureInWindow existe en la instancia nativa
+    avatarRef.current?.measureInWindow?.((x: number, y: number, w: number, h: number) => {
+      setAnchorRect({ x, y, width: w, height: h });
+      setIsVisible(true);
+    });
+  };
+
+  /// <summary>
+  /// Calcula la posición izquierda de la burbuja, evitando que se desborde.
+  /// </summary>
+  const getBubbleLeft = (): number => {
+    if (!anchorRect) return screenWidth - bubbleWidth - 8;
+    const rightEdge = anchorRect.x + anchorRect.width;   // borde derecho del avatar
+    // alinear burbuja con el borde derecho del avatar, pero con límites
+    const desiredLeft = rightEdge - bubbleWidth;
+    const minLeft = 8;
+    const maxLeft = screenWidth - bubbleWidth - 8;
+    return Math.min(Math.max(desiredLeft, minLeft), maxLeft);
+  };
+
+  /// <summary>
+  /// Calcula la posición superior de la burbuja (debajo del avatar con un margen).
+  /// </summary>
+  const getBubbleTop = (): number => {
+    if (!anchorRect) return 64;
+    return anchorRect.y + anchorRect.height + 6; // 6px debajo del avatar
+  };
 
   return (
-    <View style={styles.wrapper}>
-      <View style={styles.row}>
-        <Image
-          source={{
-            uri: user?.photoUrl || 'https://i.pravatar.cc/100?img=12',
-          }}
-          style={styles.avatar}
-        />
+    <View style={[styles.wrapper, compact ? { alignItems: 'flex-end' } : {}]}>
+      {/* === Avatar clickeable (ancla de la burbuja) === */}
+      <TouchableOpacity ref={avatarRef} activeOpacity={0.8} onPress={compact ? toggleBubble : undefined}>
+        {UserAvatarService.getPhotoUrl(user) ? (
+          <Image
+            source={{ uri: UserAvatarService.getPhotoUrl(user)! }}
+            style={compact ? styles.avatarSmall : styles.avatar}
+          />
+        ) : (
+          <View
+            style={[
+              compact ? styles.avatarSmall : styles.avatar,
+              {
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: UserAvatarService.getBackgroundColor(
+                  UserAvatarService.getInitials(user)
+                ),
+              },
+            ]}
+          >
+            <Text style={{ color: '#fff', fontSize: compact ? 14 : 20, fontWeight: 'bold' }}>
+              {UserAvatarService.getInitials(user)}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
 
-        <View style={{ flex: 1 }}>
-          {/* 👇 Nombre real del usuario */}
-          <Text style={styles.name}>
-            {user?.currentProfile?.personName ?? 'Usuario'}
-          </Text>
-
-          {/* 👇 Roles reales del usuario */}
-          <Text style={styles.role}>
-            {user?.roles?.map((r) => r.name).join(', ') ?? 'Sin rol'}
-          </Text>
+      {/* === Modo completo (Home) === */}
+      {!compact && (
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={styles.name}>{user?.currentProfile?.personName ?? 'Usuario'}</Text>
+          <Text style={styles.role}>{user?.roles?.map((r) => r.name).join(', ') ?? 'Sin rol'}</Text>
         </View>
+      )}
 
-        <Ionicons name="shield-checkmark-outline" size={22} color="#2F6D8B" />
-      </View>
+      {/* === Burbuja (Popover) en top, sin oscurecer pantalla === */}
+      {compact && isVisible && anchorRect && (
+        <Modal transparent={true} visible={true} animationType="fade" onRequestClose={() => setIsVisible(false)}>
+          {/* Clic fuera cierra la burbuja */}
+          <Pressable style={styles.overlayTransparent} onPress={() => setIsVisible(false)}>
+            {/* Contenedor vacío para capturar el click fuera */}
+          </Pressable>
+
+          {/* Caja de la burbuja posicionada absolutamente */}
+          <View
+            pointerEvents="box-none"
+            style={[
+              styles.bubbleAbsolute,
+              {
+                top: getBubbleTop(),
+                left: getBubbleLeft(),
+                width: bubbleWidth,
+              },
+            ]}
+          >
+            <View style={styles.bubbleArrow} />
+            <View style={styles.bubbleBox}>
+              {UserAvatarService.getPhotoUrl(user) ? (
+                <Image source={{ uri: UserAvatarService.getPhotoUrl(user)! }} style={styles.modalAvatar} />
+              ) : (
+                <View
+                  style={[
+                    styles.modalAvatar,
+                    {
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: UserAvatarService.getBackgroundColor(UserAvatarService.getInitials(user)),
+                    },
+                  ]}
+                >
+                  <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
+                    {UserAvatarService.getInitials(user)}
+                  </Text>
+                </View>
+              )}
+              <Text style={styles.name}>{user?.currentProfile?.personName ?? 'Usuario'}</Text>
+              <Text style={styles.role}>{user?.roles?.map((r) => r.name).join(', ') ?? 'Sin rol'}</Text>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }

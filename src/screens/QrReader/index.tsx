@@ -22,7 +22,7 @@ function parseQrPayload(raw: string): Parsed {
   try {
     const obj = JSON.parse(raw);
     if (obj && typeof obj === 'object') return obj;
-  } catch {}
+  } catch { }
   // 2) URL con query params
   try {
     const url = new URL(raw);
@@ -32,7 +32,7 @@ function parseQrPayload(raw: string): Parsed {
       o.__href = url.href;
       return o;
     }
-  } catch {}
+  } catch { }
   // 3) Texto plano
   return { raw };
 }
@@ -49,9 +49,15 @@ export default function QrReaderScreen() {
 
   const camRef = useRef<CameraView>(null);
 
+  /// <summary>
+  /// Solicita permisos si aún no se han determinado (no lo pide en cada render)
+  /// </summary>
   useEffect(() => {
-    if (!permission || !permission.granted) requestPermission();
-  }, [permission, requestPermission]);
+    if (permission && permission.status === 'undetermined') {
+      requestPermission();
+    }
+  }, [permission]);
+
 
   const onBarCodeScanned = useCallback(
     ({ data }: { data: string }) => {
@@ -125,9 +131,17 @@ export default function QrReaderScreen() {
     return (
       <SafeAreaView style={styles.center}>
         <Text style={styles.info}>Necesitas habilitar la cámara para escanear QR.</Text>
-        <TouchableOpacity style={styles.btn} onPress={requestPermission}>
+        
+        <TouchableOpacity
+          style={styles.btn}
+          onPress={async () => {
+            const res = await requestPermission();
+            console.log('🟢 Resultado permiso:', res);
+          }}
+        >
           <Text style={styles.btnText}>Conceder permiso</Text>
         </TouchableOpacity>
+
       </SafeAreaView>
     );
   }

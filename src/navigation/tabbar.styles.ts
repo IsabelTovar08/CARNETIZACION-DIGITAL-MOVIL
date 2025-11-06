@@ -4,7 +4,7 @@ export const myTabBarContainer: ViewStyle = {
   position: 'absolute',
   left: 16,
   right: 16,
-  bottom: 16,
+  bottom: 25,
   height: 64,
   borderRadius: 28,
   backgroundColor: '#C4D0E1',

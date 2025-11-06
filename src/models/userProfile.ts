@@ -26,6 +26,7 @@ export interface UserProfile {
     divisionName: string;
     profileName: string;
     qrCode: string;
+    uniqueId?: string;
   };
 }
 
