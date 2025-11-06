@@ -24,7 +24,7 @@ pipeline {
             steps {
                 echo 'Construyendo imagen Docker que compila el APK...'
                 sh '''
-                docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -f Dockerfile.build .
+                docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -f Dockerfile .
                 '''
             }
         }
