@@ -26,7 +26,7 @@ type Nav = CompositeNavigationProp<
 >;
 
 type Profile = {
-  fullName: string;
+  name: string;
   email: string;
   birthDate: string;
   city: string;
@@ -38,7 +38,7 @@ export default function ProfileScreen() {
   const { user } = useUser(); // 👈 datos del contexto (ya vienen de AsyncStorage)
 
   const [profile, setProfile] = useState<Profile>({
-    fullName: '',
+    name: '',
     email: '',
     birthDate: '',
     city: '',
@@ -58,10 +58,10 @@ export default function ProfileScreen() {
     console.log('✅ Cargando perfil desde AsyncStorage/context:', user.userName);
 
     setProfile({
-      fullName: user.currentProfile?.personName ?? 'Sin nombre',
+      name: user.currentProfile?.name ?? 'Sin nombre',
       email: user.userName ?? 'Sin correo',
-      birthDate: '1995-05-23', // opcional si no se guarda en backend
-      city: user.currentProfile?.divisionName ?? 'Sin división',
+      birthDate: '1995-05-23', 
+      city: user.currentProfile?.internalDivisionName ?? 'Sin división',
     });
   }, [user]);
 
@@ -131,18 +131,11 @@ export default function ProfileScreen() {
               </View>
             )}
 
-            <TouchableOpacity
-              onPress={() => setIsEditing((e) => !e)}
-              activeOpacity={0.9}
-              style={[styles.miniAction, isEditing && styles.miniActionActive]}
-            >
-              <Ionicons name={isEditing ? 'checkmark' : 'pencil-sharp'} size={22} />
-            </TouchableOpacity>
           </View>
 
           <Text style={styles.title}>Perfil</Text>
           <Text style={styles.subtitle}>
-            {isEditing ? 'Editando datos' : 'Información personal'}
+            {'Información personal'}
           </Text>
         </View>
 
@@ -151,9 +144,9 @@ export default function ProfileScreen() {
           <Field
             label="Nombre"
             icon="person-outline"
-            value={profile.fullName}
+            value={profile.name}
             editable={isEditing}
-            onChangeText={(t) => patch('fullName', t)}
+            onChangeText={(t) => patch('name', t)}
           />
           <Field
             label="Correo electrónico"
@@ -196,7 +189,7 @@ export default function ProfileScreen() {
           <GhostButton
             label="Solicitar cambio de datos"
             icon="create-outline"
-            onPress={() => navigation.navigate('RequestChange')}
+            onPress={() =>  navigation.navigate('MyRequests' as never)}
             kind="primary"
           />
         </View>

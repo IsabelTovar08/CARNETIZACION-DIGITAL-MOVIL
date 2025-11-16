@@ -23,13 +23,17 @@ import { styles } from "./PastEvents.styles";
 import { ApiService } from "../../services/api";
 import { EventItem } from "../../types/event";
 import AuthCard from "../../components/AuthCard";
+import { PrivateStackParamList } from "../../navigation/types";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 const BG = require("../../img/fondo.png");
 const IMG_FALLBACK = require("../../img/ia.png");
 
+type Props = NativeStackScreenProps<PrivateStackParamList, 'PastEvents'>;
+
 export const EventsApi = new ApiService<EventItem, EventItem>("event");
 
-export default function EventsScreen() {
+export default function EventsScreen({ navigation }: Props) {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -216,6 +220,17 @@ export default function EventsScreen() {
                 {(selected as any).description ?? "Sin descripción disponible."}
               </Text>
             </View>
+            <TouchableOpacity
+              style={styles.goToAttendanceButton}
+              onPress={() => {
+                closeModal();
+                navigation.navigate("EventAttendance", { event: selected })
+              }}
+            >
+              <Ionicons name="people-outline" size={18} color="white" />
+              <Text style={styles.goToAttendanceText}>Ver asistencias</Text>
+            </TouchableOpacity>
+
           </View>
         )}
       </AuthCard>

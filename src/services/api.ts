@@ -63,4 +63,13 @@ export class ApiService<TCreate, TListOrDetail> {
       request<ApiResponse<any>>(`${this.base}/${id}/toggle-active`, { method: 'PATCH', token })
     );
   }
+
+  public getEnumOptions(enumType: string) {
+    const url = `/EnumCatalog?type=${enumType}`;
+    return httpWrapper.handleRequest(
+      request<any[]>(url, {
+        method: "GET"
+      })
+    );
+  }
 }

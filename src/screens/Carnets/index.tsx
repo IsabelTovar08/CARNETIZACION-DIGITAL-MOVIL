@@ -1,73 +1,92 @@
-// src/screens/Carnets/CarnetsScreen.tsx
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
   Image,
   Dimensions,
   Animated,
+  TouchableOpacity,
+  Alert,
+  Pressable,
   ImageBackground,
-  FlatList,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useUser } from '../../services/context/UserContext';
-import { UserAvatarService } from '../../services/shared/UserAvatarService';
-import { styles } from './Carnets.styles';
-
-const SCREEN_BG = require('../../img/fondo.png');
-const CARD_BG = require('../../img/carne.jpeg');
+import { IssuedCardService } from '../../services/http/card/IssuedCardService';
+import { styles, CARD_WIDTH, CARD_HEIGHT, GAP } from './Carnets.styles';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.88; // 88% del ancho de pantalla
-const CARD_MAX = 420; // límite máximo en tablets
-const GAP = 14; // separación entre carnets
+const issuedCardService = new IssuedCardService();
 
 export default function CarnetsScreen() {
   const scrollX = useRef(new Animated.Value(0)).current;
   const { user } = useUser();
+  const [flippedId, setFlippedId] = useState<number | null>(null);
 
-  // 🧠 Generar carnets reales (uno o varios)
   const carnetList = useMemo(() => {
     if (!user?.currentProfile) return [];
 
-    // Si en un futuro hay más de un carnet, se agregarán aquí
-    return [
-      {
-        id: user.currentProfile.uniqueId || user.currentProfile.personId.toString(),
-        nombre: user.currentProfile.personName,
-        cargo: user.currentProfile.profileName,
-        empresa: user.currentProfile.divisionName,
-        qrCode: user.currentProfile.qrCode,
-        foto: user.photoUrl,
-      },
-    ];
+    const mapDto = (c: any) => ({
+      id: c.id,
+      name: c.name ?? c.personName,
+      profile: c.profile ?? c.profileName,
+      area: c.categoryArea,
+      phone: c.phoneNumber,
+      email: c.email,
+      cardId: c.cardId,
+      rh: c.bloodTypeValue,
+      company: c.companyName,
+      frontUrl: c.frontTemplateUrl,
+      backUrl: c.backTemplateUrl,
+      qrUrl: c.qrUrl,
+      photoUrl: c.userPhotoUrl,
+      address: c.address || 'Calle A\nNeiva, Huila',
+    });
+    console.log('✅ Cargando carnets desde AsyncStorage/context:', user);
+
+    const current = mapDto(user.currentProfile);
+    const others = (user.otherCards ?? []).map(mapDto);
+    return [current, ...others];
   }, [user]);
 
-  if (carnetList.length === 0) {
+  if (!carnetList.length) {
     return (
-      <View style={[styles.bg, { alignItems: 'center', justifyContent: 'center' }]}>
-        <Text style={{ color: '#333', fontSize: 16 }}>No hay datos del carnet disponibles</Text>
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No hay carnets disponibles</Text>
       </View>
     );
   }
 
+  const handleOpenPdf = async (id: number) => {
+    try {
+      await issuedCardService.openPdf(id);
+    } catch {
+      Alert.alert('Error', 'No se pudo abrir el PDF.');
+    }
+  };
+
+  const toggleFlip = (id: number) => {
+    setFlippedId((prev) => (prev === id ? null : id));
+  };
+
   return (
-    <ImageBackground source={SCREEN_BG} style={styles.bg} resizeMode="cover">
+    <View style={styles.bg}>
       <View style={styles.safe}>
+        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Tus Carnets</Text>
           <Text style={styles.subtitle}>
-            {carnetList.length > 1
-              ? 'Desliza para ver tus carnets disponibles.'
-              : 'Este es tu carnet institucional con código QR.'}
+            Aquí encontrarás tus carnets a los cuales tienes autorizados,{'\n'}
+            para cualquier tipo de eventualidad.
           </Text>
         </View>
 
+        {/* Carrusel */}
         <View style={styles.carouselWrap}>
           <Animated.FlatList
             data={carnetList}
-            keyExtractor={(it) => it.id}
             horizontal
+            keyExtractor={(it, index) => (it?.id ? it.id.toString() : `idx-${index}`)}
             showsHorizontalScrollIndicator={false}
             snapToInterval={CARD_WIDTH + GAP}
             decelerationRate="fast"
@@ -97,115 +116,125 @@ export default function CarnetsScreen() {
                 extrapolate: 'clamp',
               });
 
-              const qrPayload = JSON.stringify({
-                type: 'carnet',
-                id: item.id,
-                nombre: item.nombre,
-                perfil: item.cargo,
-                division: item.empresa,
-                qrCode: item.qrCode,
-              });
+              const isFlipped = flippedId === item.id;
 
               return (
-                <Animated.View
-                  style={{
-                    width: CARD_WIDTH,
-                    maxWidth: CARD_MAX,
-                    aspectRatio: 1.6, // mantiene proporción tipo tarjeta
-                    transform: [{ scale }],
-                    opacity,
-                  }}
-                >
-                  <View style={styles.card}>
-                    <ImageBackground
-                      source={CARD_BG}
-                      style={{ flex: 1, padding: 16 }}
-                      imageStyle={{ borderRadius: 16 }}
-                      resizeMode="cover"
-                    >
-                      {/* Empresa / División */}
-                      <Text style={styles.empresa}>{item.empresa ?? 'Institución'}</Text>
-
-                      {/* Top Row */}
-                      <View style={styles.topRow}>
-                        {item.foto ? (
-                          <Image source={{ uri: item.foto }} style={styles.foto} />
-                        ) : (
-                          <View
-                            style={[
-                              styles.foto,
-                              {
-                                backgroundColor: UserAvatarService.getBackgroundColor(
-                                  UserAvatarService.getInitials(user)
-                                ),
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                              },
-                            ]}
-                          >
-                            <Text
-                              style={{
-                                color: '#fff',
-                                fontSize: 26,
-                                fontWeight: 'bold',
-                              }}
-                            >
-                              {UserAvatarService.getInitials(user)}
-                            </Text>
-                          </View>
-                        )}
-
-                        <View style={styles.infoTop}>
-                          <Text style={styles.nombre} numberOfLines={2}>
-                            {item.nombre}
-                          </Text>
-                          <Text style={styles.cargo}>{item.cargo}</Text>
-                        </View>
-                      </View>
-
-                      {/* ID + QR mini */}
-                      <View style={styles.twoCols}>
-                        <View style={styles.col}>
-                          <Text style={styles.label}>#ID</Text>
-                          <Text style={styles.value}>{item.id}</Text>
-                        </View>
-                        <View style={[styles.col, { alignItems: 'flex-end' }]}>
-                          <Text style={styles.label}>QR</Text>
-                          <Text style={styles.value}>{item.qrCode}</Text>
-                        </View>
-                      </View>
-
-                      {/* QR principal */}
-                      <View style={{ alignItems: 'center', flex: 1, justifyContent: 'center' }}>
-                        <View
-                          style={{
-                            padding: 8,
-                            borderRadius: 12,
-                            backgroundColor: '#fff',
-                          }}
-                        >
+                <Animated.View style={[styles.cardContainer, { transform: [{ scale }], opacity }]}>
+                  <Pressable onPress={() => toggleFlip(item.id)} style={styles.card}>
+                    
+                    {/* FRONT SIDE */}
+                    {!isFlipped ? (
+                      <ImageBackground
+                        source={{ uri: item.frontUrl }}
+                        style={styles.cardBackground}
+                        resizeMode="cover"
+                      >
+                        {/* QR Code */}
+                        <View style={styles.qrContainer}>
                           <QRCode
-                            value={qrPayload}
-                            size={width < 400 ? 90 : 110}
-                            backgroundColor="transparent"
-                            color="#0b3b57"
+                            value={item.qrUrl ?? ' '}
+                            size={CARD_WIDTH * 0.18}
+                            backgroundColor="white"
+                            color="#000"
                           />
                         </View>
-                      </View>
 
-                      {/* Footer */}
-                      <View style={styles.footerRow}>
-                        <Text style={styles.rol}>{item.cargo?.toUpperCase()}</Text>
-                        <View style={{ width: 92 }} />
-                      </View>
-                    </ImageBackground>
-                  </View>
+                        {/* Photo */}
+                        {item.photoUrl && (
+                          <Image source={{ uri: item.photoUrl }} style={styles.photo} />
+                        )}
+
+                        {/* Name & Profile */}
+                        <View style={styles.nameContainer}>
+                          <Text style={styles.name}>{item.name}</Text>
+                          <Text style={styles.profile}>{item.profile}</Text>
+                          {item.area && <Text style={styles.area}>{item.area}</Text>}
+                        </View>
+
+                        {/* Teléfono */}
+                        <View style={styles.phoneContainer}>
+                          <Text style={styles.label}>Teléfono</Text>
+                          <Text style={styles.value}>{item.phone ?? '---'}</Text>
+                        </View>
+
+                        {/* RH */}
+                        <View style={styles.rhContainer}>
+                          <Text style={styles.label}>RH:</Text>
+                          <Text style={styles.rhValue}>{item.rh ?? 'O+'}</Text>
+                        </View>
+
+                        {/* Correo */}
+                        <View style={styles.emailContainer}>
+                          <Text style={styles.label}>Correo Electrónico</Text>
+                          <Text style={styles.value}>{item.email ?? '---'}</Text>
+                        </View>
+
+                        {/* ID */}
+                        <View style={styles.idContainer}>
+                          <Text style={styles.idLabel}>#ID: </Text>
+                          <Text style={styles.idValue}>{item.cardId ?? '---'}</Text>
+                        </View>
+
+                        {/* Botón PDF */}
+                        <TouchableOpacity
+                          style={styles.pdfButton}
+                          onPress={() => handleOpenPdf(item.id)}
+                        >
+                          <Text style={styles.pdfText}>Ver PDF</Text>
+                        </TouchableOpacity>
+                      </ImageBackground>
+                    ) : (
+                      /* BACK SIDE */
+                      <ImageBackground
+                        source={{ uri: item.backUrl }}
+                        style={styles.cardBackground}
+                        resizeMode="cover"
+                      >
+                        {/* Título */}
+                        <View style={styles.backTitleContainer}>
+                          <View style={styles.backTitleBox}>
+                            <Text style={styles.backTitleText}>
+                              Términos y{'\n'}Condiciones
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Guía de uso */}
+                        <Text style={styles.backGuide}>Guía de uso</Text>
+
+                        <Text style={styles.backBullet1}>
+                          • Este carnet debe presentarse al ingresar a las instalaciones o al
+                          solicitar servicios internos de la empresa.
+                        </Text>
+
+                        <Text style={styles.backBullet2}>
+                          • Cualquier alteración, mal uso o uso fraudulento del carnet está
+                          estrictamente prohibido y puede conllevar sanciones disciplinarias.
+                        </Text>
+
+                        {/* Dirección */}
+                        <View style={styles.backAddressContainer}>
+                          <Text style={styles.backLabel}>Dirección</Text>
+                          <Text style={styles.backValue}>{item.address}</Text>
+                        </View>
+
+                        {/* Contacto */}
+                        <View style={styles.backContactContainer}>
+                          <Text style={styles.backLabel}>Contacto</Text>
+                          <Text style={styles.backContactValue}>
+                            {item.phone ?? '---'}{'\n'}
+                            {item.email ?? '---'}
+                          </Text>
+                        </View>
+                      </ImageBackground>
+                    )}
+                  </Pressable>
                 </Animated.View>
               );
             }}
           />
         </View>
       </View>
-    </ImageBackground>
+    </View>
   );
 }

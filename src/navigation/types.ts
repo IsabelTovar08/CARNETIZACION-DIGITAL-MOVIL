@@ -20,6 +20,8 @@ export type PrivateStackParamList = {
   RequestChange: undefined; // nueva ruta para solicitar cambio de datos
   Events: undefined;
   Asistencias: undefined;
+  MyRequests: undefined;
+  EventAttendance: { event: any};
 };
 
 export type AppTabParamList = {

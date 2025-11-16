@@ -1,98 +1,270 @@
-import { Dimensions, Platform, StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 
 const { width } = Dimensions.get('window');
-
-export const CARD_W = Math.min(500, width * 0.7);
-export const CARD_H = CARD_W * 1.38;
+export const CARD_WIDTH = width * 0.88;
+export const CARD_HEIGHT = CARD_WIDTH / 1.586;
 export const GAP = 16;
 
-const SHADOW =
-  Platform.OS === 'ios'
-    ? { shadowColor: '#000', shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 8 } }
-    : { elevation: 8 };
-
 export const styles = StyleSheet.create({
-  bg: { flex: 1 },
-  safe: { flex: 1, paddingTop: 8 },
-  header: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 8, paddingBottom: 10 },
-  title: { fontSize: 26, fontWeight: '900', color: '#10324A' },
-  subtitle: { color: '#ffffffff', textAlign: 'center', marginTop: 8, lineHeight: 20, width: '86%' },
-
-  carouselWrap: { flex: 1, justifyContent: 'center' },
-
-  itemWrap: { width: CARD_W, height: CARD_H, alignItems: 'center', justifyContent: 'center' },
-
-  card: {
-    ...SHADOW,
-    width: CARD_W,
-    height: CARD_H,
-    borderRadius: 18,
-    backgroundColor: '#ffffff', // no afecta porque la imagen cubre todo
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#e7eef5',
+  // ===== LAYOUT PRINCIPAL =====
+  bg: {
+    flex: 1,
+    backgroundColor: '#eef3f8',
   },
-
-  // contenedor del ImageBackground
-  cardBg: { flex: 1, padding: 14 },
-
-  // Imagen del carnet sin (bien fuerte)
-  cardBgImg: {
-    resizeMode: 'cover',
-    opacity: 1,         
-    borderRadius: 18,   // mantiene el clip redondeado
+  safe: {
+    flex: 1,
+    paddingTop: 60,
   },
-
-  empresa: { alignSelf: 'center', color: '#0b3b57', fontSize: 16, fontWeight: '900', marginBottom: 6 },
-
-  topRow: { flexDirection: 'row', gap: 10, marginBottom: 6, alignItems: 'center' },
-  foto: { width: 86, height: 86, borderRadius: 10, backgroundColor: '#e7eef6' },
-  infoTop: { flex: 1 },
-  nombre: { color: '#0f2e44', fontSize: 18, fontWeight: '900' },
-  cargo: { color: '#27485c', marginTop: 2 },
-
-  twoCols: { flexDirection: 'row', marginTop: 6 },
-  col: { flex: 1 },
-
-  block: { marginTop: 6 },
-  label: { color: '#2d556b', fontSize: 12, fontWeight: '700' },
-  value: { color: '#0f2e44', fontSize: 14, fontWeight: '800' },
-  valueMuted: { color: '#113a50', marginTop: 2 },
-
-  // QR fijo más arriba
-  qrFixed: {
-    position: 'absolute',
-    right: 12,
-    bottom: 11, // súbelo/bájalo aquí si quieres afinar
-    alignItems: 'center',
+  emptyContainer: {
+    flex: 1,
+    backgroundColor: '#eef3f8',
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  qrBorder: {
-    padding: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#cfe1ee',
-    backgroundColor: '#ffffff',
+  emptyText: {
+    color: '#333',
+    fontSize: 16,
   },
 
-  footerRow: {
+  // ===== HEADER =====
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#0b3b57',
+  },
+  subtitle: {
+    textAlign: 'center',
+    color: '#4b5563',
+    marginTop: 8,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+
+  // ===== CARRUSEL =====
+  carouselWrap: {
+    flex: 1,
+  },
+  cardContainer: {
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+  },
+  card: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  cardBackground: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+
+  // ===== FRONT SIDE - QR =====
+  qrContainer: {
     position: 'absolute',
-    left: 14,
-    right: 14,
-    bottom: 10,
+    top: 20,
+    right: 25,
+    backgroundColor: 'white',
+    padding: 6,
+    borderRadius: 8,
+  },
+
+  // ===== FRONT SIDE - FOTO =====
+  photo: {
+    position: 'absolute',
+    top: 110,
+    left: 30,
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+
+  // ===== FRONT SIDE - NOMBRE Y PERFIL =====
+  nameContainer: {
+    position: 'absolute',
+    top: 115,
+    left: 145,
+    right: 25,
+  },
+  name: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: '#000',
+    lineHeight: 23,
+  },
+  profile: {
+    fontSize: 14,
+    color: '#374151',
+    marginTop: 3,
+    lineHeight: 17,
+  },
+  area: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginTop: 3,
+  },
+
+  // ===== FRONT SIDE - TELÉFONO =====
+  phoneContainer: {
+    position: 'absolute',
+    top: 235,
+    left: 35,
+  },
+
+  // ===== FRONT SIDE - RH =====
+  rhContainer: {
+    position: 'absolute',
+    top: 235,
+    right: 55,
+    alignItems: 'center',
+  },
+  rhValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+    marginTop: 3,
+  },
+
+  // ===== FRONT SIDE - CORREO =====
+  emailContainer: {
+    position: 'absolute',
+    top: 290,
+    left: 35,
+  },
+
+  // ===== FRONT SIDE - LABELS Y VALUES =====
+  label: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#0b3b57',
+  },
+  value: {
+    fontSize: 13,
+    color: '#000',
+    marginTop: 3,
+  },
+
+  // ===== FRONT SIDE - ID =====
+  idContainer: {
+    position: 'absolute',
+    bottom: 35,
+    left: 35,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  rol: { color: '#0f2e44', fontWeight: '900' },
+  idLabel: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  idValue: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: '#1b66c9',
+  },
 
-  // Dots un poco más arriba
-  dots: {
+  // ===== FRONT SIDE - BOTÓN PDF =====
+  pdfButton: {
     position: 'absolute',
-    bottom: 34,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    gap: 8,
+    bottom: 28,
+    right: 35,
+    backgroundColor: '#0b3b57',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
   },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#214a63' },
+  pdfText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+
+  // ===== BACK SIDE - TÍTULO =====
+  backTitleContainer: {
+    position: 'absolute',
+    top: 90,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  backTitleBox: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 30,
+    paddingVertical: 14,
+    borderRadius: 25,
+  },
+  backTitleText: {
+    color: '#000',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 23,
+  },
+
+  // ===== BACK SIDE - GUÍA DE USO =====
+  backGuide: {
+    position: 'absolute',
+    top: 175,
+    left: 35,
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#0b3b57',
+  },
+  backBullet1: {
+    position: 'absolute',
+    top: 200,
+    left: 35,
+    right: 35,
+    fontSize: 12,
+    color: '#000',
+    lineHeight: 17,
+  },
+  backBullet2: {
+    position: 'absolute',
+    top: 255,
+    left: 35,
+    right: 35,
+    fontSize: 12,
+    color: '#000',
+    lineHeight: 17,
+  },
+
+  // ===== BACK SIDE - DIRECCIÓN =====
+  backAddressContainer: {
+    position: 'absolute',
+    bottom: 55,
+    left: 35,
+  },
+
+  // ===== BACK SIDE - CONTACTO =====
+  backContactContainer: {
+    position: 'absolute',
+    bottom: 55,
+    right: 35,
+    alignItems: 'flex-end',
+  },
+  backContactValue: {
+    fontSize: 12,
+    color: '#000',
+    marginTop: 3,
+    lineHeight: 16,
+    textAlign: 'right',
+  },
+
+  // ===== BACK SIDE - LABELS Y VALUES =====
+  backLabel: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#0b3b57',
+  },
+  backValue: {
+    fontSize: 12,
+    color: '#000',
+    marginTop: 3,
+    lineHeight: 16,
+  },
 });

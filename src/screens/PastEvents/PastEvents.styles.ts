@@ -158,4 +158,21 @@ export const styles = StyleSheet.create({
     color: "#334155",
     lineHeight: 20,
   },
+
+  goToAttendanceButton: {
+  backgroundColor: "#2563EB",
+  paddingVertical: 10,
+  flexDirection: "row",
+  justifyContent: "center",
+  alignItems: "center",
+  borderRadius: 10,
+  marginTop: 14,
+},
+goToAttendanceText: {
+  color: "white",
+  marginLeft: 6,
+  fontSize: 14,
+  fontWeight: "500",
+},
+
 });

@@ -23,19 +23,19 @@ export interface AttendanceSearchParams {
 
 export interface AttendanceDto {
   id: number;
-  personName: string;
+  personFullName: string;
   eventName: string;
   timeOfEntry: string;
   timeOfExit?: string;
   accessPointOfEntryName: string;
-    accessPointOfExitName?: string;
+  accessPointOfExitName?: string;
 }
 
 export interface AttendanceSearchResponse {
-    items: AttendanceDto[];
-    total: number;
-    page: number;
-    pageSize: number;
+  items: AttendanceDto[];
+  total: number;
+  page: number;
+  pageSize: number;
 };
 
 
@@ -71,4 +71,41 @@ export class AttendanceService<
       request<AttendanceSearchResponse>(url, { method: "GET" })
     );
   }
+
+  /// <summary>
+  /// Registra la entrada de asistencia.
+  /// Endpoint: POST /api/Attendance/register-entry
+  /// </summary>
+  public async registerEntry(qrCodeKey: string) {
+  const url = `${this.base}/register-entry`;
+
+  return httpWrapper.handleRequest(
+    request<ApiResponse<any>>(url, {
+      method: "POST",
+      body: {
+        id: 0,
+        personId: 0,
+        time: new Date().toISOString(),
+        qrCodeKey
+      }
+    })
+  );
+}
+
+
+  /// <summary>
+  /// Registra la salida de asistencia.
+  /// Endpoint: POST /api/Attendance/register-exit
+  /// </summary>
+  public async registerExit(qrCodeKey: string) {
+    const url = `${this.base}/register-exit`;
+
+    return httpWrapper.handleRequest(
+      request<ApiResponse<any>>(url, {
+        method: "POST",
+        body: ({ qrCodeKey, personId: 0 })
+      })
+    );
+  }
+
 }

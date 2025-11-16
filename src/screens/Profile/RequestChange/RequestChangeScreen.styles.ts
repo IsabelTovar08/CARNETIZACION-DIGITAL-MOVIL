@@ -78,4 +78,40 @@ export const styles = StyleSheet.create({
     color: colors.card,
     fontWeight: '700',
   },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContainer: {
+    width: "85%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.primary,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  modalContent: {
+    marginTop: 5,
+    gap: 6,
+  },
+  bold: { fontWeight: "bold" },
+
 });

@@ -160,7 +160,7 @@ export default function AttendanceScreen() {
                 <Text style={styles.eventHeader}>{eventName}</Text>
                 {list.map((att) => (
                     <View key={att.id} style={styles.card}>
-                        <Text style={styles.personName}>{att.personName}</Text>
+                        <Text style={styles.personName}>{att.personFullName}</Text>
 
                         {/* Entrada */}
                         <View style={styles.timeRow}>

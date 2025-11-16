@@ -21,13 +21,26 @@ export interface UserProfile {
     description: string;
   }>;
   currentProfile: {
+    id: number;
+    personId: number;
+    personName: string;
+    internalDivisionName: string;
+    profileName: string;
+    qrCode: string;
+    uniqueId?: string;
+    name?: string;
+  };
+  otherCards?: Array<{
+    id: number;
     personId: number;
     personName: string;
     divisionName: string;
     profileName: string;
     qrCode: string;
     uniqueId?: string;
-  };
+    frontTemplateUrl?: string;
+    backTemplateUrl?: string;
+  }>;
 }
 
 /// <summary>

@@ -38,6 +38,8 @@ import MyTabBar from './TabBarIcon';
 import ProfileHeader from '../components/ProfileHeader/ProfileHeader';
 import colors from '../theme/colors';
 import AttendanceScreen from '../screens/Attendance/AttendanceScreen';
+import MyRequestsScreen from '../screens/Profile/RequestChange/MyRequestsScreen';
+import EventAttendanceScreen from '../screens/Attendance/EventAttendanceScreen';
 
 const PublicStack = createNativeStackNavigator<PublicStackParamList>();
 const PrivateStack = createNativeStackNavigator<PrivateStackParamList>();
@@ -116,11 +118,17 @@ function HomePrivateStack() {
         component={NotificationsScreen}
         options={{ title: 'Notificaciones' }}
       />
-       <PrivateStack.Screen
+      <PrivateStack.Screen
         name="Asistencias"
         component={AttendanceScreen}
         options={{ title: 'Asistencias', headerShown: true }}
       />
+      <PrivateStack.Screen
+        name="EventAttendance"
+        component={EventAttendanceScreen}
+        options={{ headerShown: false }}
+      />
+
     </PrivateStack.Navigator>
   );
 }
@@ -138,7 +146,7 @@ function AttendancePrivateStack() {
         headerRight: () => <HeaderRightIcons navigation={navigation} />,
       })}
     >
-       <PrivateStack.Screen
+      <PrivateStack.Screen
         name="Asistencias"
         component={AttendanceScreen}
         options={{ title: 'Asistencias', headerShown: true }}
@@ -205,6 +213,11 @@ function PeoplePrivateStack() {
         name="RequestChange"
         component={RequestChangeScreen}
         options={{ title: 'Solicitud de cambio', headerShown: true }}
+      />
+      <PrivateStack.Screen
+        name="MyRequests"
+        component={MyRequestsScreen}
+        options={{ title: 'Mis solicitudes', headerShown: true }}
       />
       <PrivateStack.Screen
         name="Notificaciones"

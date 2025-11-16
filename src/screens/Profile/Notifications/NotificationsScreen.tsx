@@ -3,9 +3,10 @@ import { SafeAreaView, SectionList, View, Text, StyleSheet, ImageBackground } fr
 import AttendanceCard from '../../../components/AttendanceCard/AttendanceCard';
 import { palette } from '../../../components/AttendanceCard/attendanceCard.styles';
 import { NotificationService } from '../../../services/http/Notifications/NotificationService';
+import { notificationHub } from '../../../services/http/Notifications/NotificationHubService';
 
 // import dayjs from 'dayjs';
-const BG_IMAGE = require('../../../img/fondo-azul.png');  
+const BG_IMAGE = require('../../../img/fondo-azul.png');
 
 const notificationService = new NotificationService<any, any>();
 
@@ -21,7 +22,7 @@ export default function NotificationsScreen() {
 
         if (response.status && Array.isArray(response.data)) {
           setNotifications(response.data);
-          console.log('✅ Notificaciones obtenidas:', response.data);                                                                                                                                                                                                                                                                                                                         
+          console.log('✅ Notificaciones obtenidas:', response.data);
         } else {
           console.warn('⚠️ Error al obtener notificaciones:', response.message);
         }
@@ -30,6 +31,13 @@ export default function NotificationsScreen() {
         console.error('❌ Error al obtener notificaciones:', error);
       })
       .finally(() => setLoading(false));
+
+    notificationHub.subscribe((newNotif) => {
+      console.log("📬 Nueva notificación recibida:", newNotif);
+
+      // Añadir la nueva notificación al inicio
+      setNotifications((prev) => [newNotif, ...prev]);
+    });
   }, []);
 
   // 🔹 Función para verificar si una fecha es hoy
@@ -88,7 +96,7 @@ export default function NotificationsScreen() {
 
   return (
     <ImageBackground source={BG_IMAGE} style={s.background} resizeMode="cover">
-      <SafeAreaView style={{ flex: 1}}>
+      <SafeAreaView style={{ flex: 1 }}>
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.notificationId.toString()}
@@ -133,7 +141,7 @@ const s = StyleSheet.create({
   loadingText: {
     fontSize: 16
   },
-    /** Fondo general de imagen */
+  /** Fondo general de imagen */
   background: {
     flex: 1,
     width: '100%',
