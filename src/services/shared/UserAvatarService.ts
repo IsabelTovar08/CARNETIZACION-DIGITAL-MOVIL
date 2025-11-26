@@ -11,7 +11,7 @@ export class UserAvatarService {
   /// </summary>
   /// <param name="user">Usuario autenticado</param>
   public static getPhotoUrl(user: UserProfile | null): string | null {
-    if (user?.photoUrl) return user.photoUrl;
+    if (user?.currentProfile?.userPhotoUrl) return user.currentProfile.userPhotoUrl;
     return null;
   }
 
@@ -21,9 +21,9 @@ export class UserAvatarService {
   /// <param name="user">Usuario autenticado</param>
   /// <returns>Iniciales en mayúscula (ej: "MT")</returns>
   public static getInitials(user: UserProfile | null): string {
-    if (!user?.currentProfile?.personName) return "?";
+    if (!user?.currentProfile?.name) return "?";
 
-    const parts = user.currentProfile.personName.trim().split(" ");
+    const parts = user.currentProfile.name.trim().split(" ");
     const initials = parts.map((p) => p[0]?.toUpperCase() || "").slice(0, 2).join("");
     return initials || "?";
   }

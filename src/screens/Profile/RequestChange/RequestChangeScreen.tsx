@@ -15,6 +15,7 @@ import { ModificationRequestService } from "../../../services/http/Modifications
 import { ApiService } from "../../../services/api";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import colors from "../../../theme/colors";
+import { AdaptiveInput } from "./AdaptiveInput";
 
 interface ModificationRequestCreateDto {
   field: number;
@@ -46,20 +47,29 @@ const modificationRequestService = new ModificationRequestService<
 
 const apiService = new ApiService<any, any>("");
 
-export default function RequestChangeScreen() {
+interface Props {
+  navigation: any;
+}
+
+
+export default function RequestChangeScreen({navigation} : Props) {
   const [fields, setFields] = useState<EnumOptionDto[]>([]);
   const [reasons, setReasons] = useState<EnumOptionDto[]>([]);
+
   const [field, setField] = useState<number | undefined>();
   const [reason, setReason] = useState<number | undefined>();
   const [newValue, setNewValue] = useState("");
   const [message, setMessage] = useState("");
+
+  const [selectedFieldCode, setSelectedFieldCode] = useState<string | null>(
+    null
+  );
 
   const [responseData, setResponseData] = useState<ModificationResponse | null>(
     null
   );
   const [showModal, setShowModal] = useState(false);
 
-  // 🔹 Cargar enums
   useEffect(() => {
     const loadEnums = async () => {
       const [resFields, resReasons] = await Promise.all([
@@ -70,12 +80,19 @@ export default function RequestChangeScreen() {
       setFields(resFields || []);
       setReasons(resReasons || []);
     };
+
     loadEnums();
   }, []);
 
+  /// <summary>
+  /// Enviar solicitud
+  /// </summary>
   const sendRequest = async () => {
     if (field === undefined || reason === undefined || !newValue.trim()) {
-      Alert.alert("Campos incompletos", "Por favor completa todos los campos requeridos.");
+      Alert.alert(
+        "Campos incompletos",
+        "Por favor completa todos los campos requeridos."
+      );
       return;
     }
 
@@ -91,10 +108,12 @@ export default function RequestChangeScreen() {
     if (res.success && res.data) {
       setResponseData(res.data);
       setShowModal(true);
+
       setField(undefined);
       setReason(undefined);
       setNewValue("");
       setMessage("");
+      setSelectedFieldCode(null);
     } else {
       Toast.show({
         type: ALERT_TYPE.DANGER,
@@ -110,12 +129,18 @@ export default function RequestChangeScreen() {
 
       {/* Campo */}
       <Text style={styles.label}>Dato que deseas modificar</Text>
-      <View style={[styles.pickerContainer, { overflow: "visible" }]}>
+
+      <View style={styles.pickerContainer}>
         <Picker
-          mode="dropdown"
           selectedValue={field}
-          onValueChange={(v) => setField(v)}
-          style={[styles.picker, { height: 48 }]}
+          onValueChange={(v) => {
+            setField(v);
+
+            const found = fields.find((f) => f.id === v);
+            setSelectedFieldCode(found?.code || null);
+
+            setNewValue("");
+          }}
         >
           <Picker.Item label="Selecciona un campo..." value={undefined} />
           {fields.map((f) => (
@@ -124,24 +149,18 @@ export default function RequestChangeScreen() {
         </Picker>
       </View>
 
-      {/* Valor */}
+      {/* Input dinámico */}
       <Text style={styles.label}>Nuevo valor</Text>
-      <TextInput
-        placeholder="Escribe el nuevo valor"
-        style={styles.input}
+      <AdaptiveInput
+        fieldCode={selectedFieldCode}
         value={newValue}
-        onChangeText={setNewValue}
+        onChange={setNewValue}
       />
 
       {/* Motivo */}
       <Text style={styles.label}>Motivo</Text>
-      <View style={[styles.pickerContainer, { overflow: "visible" }]}>
-        <Picker
-          mode="dropdown"
-          selectedValue={reason}
-          onValueChange={(v) => setReason(v)}
-          style={[styles.picker, { height: 48 }]}
-        >
+      <View style={styles.pickerContainer}>
+        <Picker selectedValue={reason} onValueChange={setReason}>
           <Picker.Item label="Selecciona un motivo..." value={undefined} />
           {reasons.map((r) => (
             <Picker.Item key={r.id} label={r.name} value={r.id} />
@@ -164,13 +183,8 @@ export default function RequestChangeScreen() {
         <Text style={styles.btnText}>Enviar solicitud</Text>
       </TouchableOpacity>
 
-      {/* 🔹 Modal de respuesta */}
-      <Modal
-        visible={showModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowModal(false)}
-      >
+      {/* Modal */}
+      <Modal visible={showModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Ionicons
@@ -179,7 +193,9 @@ export default function RequestChangeScreen() {
               color={colors.success}
               style={{ alignSelf: "center", marginBottom: 10 }}
             />
+
             <Text style={styles.modalTitle}>Solicitud enviada</Text>
+
             {responseData && (
               <View style={styles.modalContent}>
                 <Text>
@@ -200,11 +216,12 @@ export default function RequestChangeScreen() {
                 </Text>
               </View>
             )}
+
             <TouchableOpacity
               style={[styles.btn, { marginTop: 20 }]}
               onPress={() => setShowModal(false)}
             >
-              <Text style={styles.btnText}>Aceptar</Text>
+              <Text style={styles.btnText} onPress={() => navigation.navigate("MyRequestsScreen")}>Aceptar</Text>
             </TouchableOpacity>
           </View>
         </View>

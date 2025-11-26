@@ -114,7 +114,7 @@ export default function ProfileHeader({ compact = false }: { compact?: boolean }
       {/* === Modo completo (Home) === */}
       {!compact && (
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.name}>{user?.currentProfile?.personName ?? 'Usuario'}</Text>
+          <Text style={styles.name}>{user?.currentProfile?.name ?? 'Usuario'}</Text>
           <Text style={styles.role}>{user?.roles?.map((r) => r.name).join(', ') ?? 'Sin rol'}</Text>
         </View>
       )}
@@ -159,7 +159,7 @@ export default function ProfileHeader({ compact = false }: { compact?: boolean }
                   </Text>
                 </View>
               )}
-              <Text style={styles.name}>{user?.currentProfile?.personName ?? 'Usuario'}</Text>
+              <Text style={styles.name}>{user?.currentProfile?.name ?? 'Usuario'}</Text>
               <Text style={styles.role}>{user?.roles?.map((r) => r.name).join(', ') ?? 'Sin rol'}</Text>
             </View>
           </View>

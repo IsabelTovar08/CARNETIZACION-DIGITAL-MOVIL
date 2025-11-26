@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { styles, palette } from './attendanceCard.styles';
+import { AttendanceService, AttendanceDto } from '../../services/http/attendance/AttendanceService';
 
 type Variant = 'attendance' | 'notification' | 'alert';
 

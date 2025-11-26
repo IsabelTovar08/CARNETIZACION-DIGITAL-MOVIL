@@ -10,18 +10,49 @@ export type VerifyResponse = { accessToken: string; refreshToken: string; user?:
 
 
 export const authService = {
-  login: (email: string, password: string) =>
-   httpWrapper.handleRequest( request<ApiResponse<any>>('/auth/login', {
-      method: 'POST',
-      body: { email, password },
-      skipAuth: true,
+  login: async (email: string, password: string) => {
+    const res = await httpWrapper.handleRequest(
+      request<ApiResponse<any>>('/auth/login', {
+        method: 'POST',
+        body: { email, password },
+        skipAuth: true,
+      })
+    );
 
-    })),
+    const data = res.data;
+    console.log("TOKENS" + data)
 
-  async verifyCode(userId: number | undefined, code: string ) {
+    // Caso 1: NO tiene 2FA → vienen tokens
+    if (data?.accessToken && data?.refreshToken) {
+      console.log("TOKENS" + data.accessToken)
+      console.log("TOKENS" + data.refreshToken)
+
+      const tokens: Tokens = { accessToken: data.accessToken, refreshToken: data.refreshToken };
+      await tokenStorage.saveTokens(tokens);
+
+      return {
+        requiresTwoFactor: false,
+        tokens
+      };
+    }
+
+    // Caso 2: SÍ tiene 2FA → viene userId
+    if (data?.userId) {
+      return {
+        requiresTwoFactor: true,
+        userId: data.userId,
+        email,
+      };
+    }
+
+    throw new Error("Respuesta inesperada del servidor");
+  },
+
+
+  async verifyCode(userId: number | undefined, code: string) {
     const data = await request<VerifyResponse>('/auth/verify-code', {
       method: 'POST',
-      body: {userId, code },
+      body: { userId, code },
       skipAuth: true,
     });
     const tokens: Tokens = { accessToken: data.accessToken, refreshToken: data.refreshToken };
@@ -39,4 +70,49 @@ export const authService = {
       await tokenStorage.clearTokens();
     }
   },
+
+  // ============================================================
+  //  FORGOT PASSWORD (POST /auth/forgot-password)
+  // ============================================================
+  async forgotPassword(email: string) {
+    return await httpWrapper.handleRequest(
+      request<ApiResponse<any>>('/auth/forgot-password', {
+        method: 'POST',
+        body: { email },
+        skipAuth: true,
+      })
+    );
+  },
+
+  // ============================================================
+  //  RESET PASSWORD (POST /auth/reset-password)
+  // ============================================================
+  async resetPassword(email: string, token: string, newPassword: string) {
+    return await httpWrapper.handleRequest(
+      request<ApiResponse<any>>('/auth/reset-password', {
+        method: 'POST',
+        body: { email, token, newPassword },
+        skipAuth: true,
+      })
+    );
+  },
+
+  // ============================================================
+  //  CHANGE PASSWORD (PATCH /auth/change-password)
+  // ============================================================
+  async changePassword(currentPassword: string, newPassword: string, confirmNewPassword: string) {
+    return await httpWrapper.handleRequest(
+      request<ApiResponse<any>>('/auth/change-password', {
+        method: 'PATCH',
+        body: { currentPassword, newPassword, confirmNewPassword },
+      })
+    );
+  },
+
+  async toggleTwoFactor() {
+    return await request('/User/two-factor/toggle', {
+      method: 'POST',
+    });
+  }
+
 };

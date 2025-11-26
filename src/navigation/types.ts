@@ -22,6 +22,8 @@ export type PrivateStackParamList = {
   Asistencias: undefined;
   MyRequests: undefined;
   EventAttendance: { event: any};
+  RequestDetails: { item: any };
+  NotificationDetail: { notification: any};
 };
 
 export type AppTabParamList = {

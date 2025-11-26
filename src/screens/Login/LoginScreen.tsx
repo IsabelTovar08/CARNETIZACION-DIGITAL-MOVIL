@@ -21,6 +21,7 @@ import { PublicStackParamList } from '../../navigation/types';
 import AuthCard from '../../components/AuthCard';
 import ForgotPasswordForm from '../../components/ForgotPasswordForm';
 import { authService } from '../../services/auth/authService';
+import { useUser } from '../../services/context/UserContext';
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'Login'>;
 
@@ -34,6 +35,7 @@ export default function LoginScreen({ navigation }: Props) {
   const [showForgot, setShowForgot] = useState(false);
 
   const { signIn } = useAuth();
+  const { loadCurrentUser, user } = useUser();
 
   const onBack = () => {
     if (navigation.canGoBack()) navigation.goBack();
@@ -52,12 +54,26 @@ export default function LoginScreen({ navigation }: Props) {
 
     try {
       setLoading(true);
+
       const res = await authService.login(email.trim(), pwd);
 
-      navigation.navigate('VerifyPassword', {
-        email: email.trim(),
-        userId: res.data.userId
-      });
+      // Caso 1: requiere código → ir a VerifyPassword
+      if (res.requiresTwoFactor) {
+        navigation.navigate('VerifyPassword', {
+          email: res.email || email.trim(),
+          userId: res.userId
+        });
+        return;
+      }
+
+      // Caso 2: login completo → hacer signIn
+      if (!res.requiresTwoFactor) {
+        await signIn();
+        // Carga la información del usuario desde /api/user/me
+        await loadCurrentUser();
+
+        return;
+      }
 
     } catch (e: any) {
       setErrorMsg(e?.message || 'No fue posible iniciar sesión.');
@@ -66,10 +82,11 @@ export default function LoginScreen({ navigation }: Props) {
     }
   };
 
+
   const showEmailRequired = submitted && !email.trim();
   const showPwdRequired = submitted && !pwd.trim();
 
-  // 🔥 CONTENIDO PRINCIPAL → se usa en ambas versiones (web/móvil)
+  //  CONTENIDO PRINCIPAL → se usa en ambas versiones (web/móvil)
   const content = (
     <View style={styles.container}>
       <ImageBackground

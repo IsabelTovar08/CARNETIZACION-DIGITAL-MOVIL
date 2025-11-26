@@ -16,4 +16,6 @@ export default {
   shadow: 'rgba(0,0,0,0.06)',
   danger: '#E53935',
   success: '#4CAF50',
+  darkText: '#1B3E56',
+  blueDark: '#21465F',
 };

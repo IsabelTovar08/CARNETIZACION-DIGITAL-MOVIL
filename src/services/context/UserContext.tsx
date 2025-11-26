@@ -13,6 +13,8 @@ import React, {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { UserProfile, UserResponse } from "../../models/userProfile";
 import { UserService } from "../http/security/UserService";
+import { NotificationService } from "../http/Notifications/NotificationService";
+import { notificationStore } from "../http/Notifications/NotificationStore";
 
 /// <summary>
 /// Definición del tipo de contexto para TypeScript.
@@ -48,6 +50,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<any | null>(null);
     const [loading, setLoading] = useState(false);
     const userService = new UserService<UserResponse>();
+    const notificationService = new NotificationService<any, any>();
 
     /// <summary>
     /// Obtiene la información del usuario actual desde el backend y la guarda localmente.
@@ -111,6 +114,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
                     console.log("⚠️ No hay usuario en AsyncStorage. Consultando backend...");
                     await loadCurrentUser();
                 }
+                const total = await notificationService.getCount();
+                notificationStore.set(total);
+
             } catch (error) {
                 console.error("❌ Error al cargar usuario inicial:", error);
             }

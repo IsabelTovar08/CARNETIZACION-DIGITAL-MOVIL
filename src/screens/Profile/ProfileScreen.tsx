@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Modal,
+  Switch,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
@@ -19,6 +22,7 @@ import { useAuth } from '../../services/auth/AuthContext';
 import { useUser } from '../../services/context/UserContext';
 import { PrivateStackParamList, AppTabParamList } from '../../navigation/types';
 import { UserAvatarService } from '../../services/shared/UserAvatarService';
+import { authService } from '../../services/auth/authService';
 
 type Nav = CompositeNavigationProp<
   NativeStackNavigationProp<PrivateStackParamList, 'Perfil'>,
@@ -35,7 +39,7 @@ type Profile = {
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
   const { signOut } = useAuth();
-  const { user } = useUser(); // 👈 datos del contexto (ya vienen de AsyncStorage)
+  const { user } = useUser();
 
   const [profile, setProfile] = useState<Profile>({
     name: '',
@@ -46,30 +50,37 @@ export default function ProfileScreen() {
 
   const [isEditing, setIsEditing] = useState(false);
 
-  /// <summary>
-  /// Al montar, toma los datos del contexto (sin llamar al backend).
-  /// </summary>
-  useEffect(() => {
-    if (!user) {
-      console.warn('⚠️ No hay usuario en contexto, revisa UserProvider');
-      return;
-    }
+  // ======================
+  // 🔐 Estado de 2FA
+  // ======================
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [loading2FA, setLoading2FA] = useState(false);
+  const [error2FA, setError2FA] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingValue, setPendingValue] = useState<boolean | null>(null);
 
-    console.log('✅ Cargando perfil desde AsyncStorage/context:', user.userName);
+  // ==========================
+  // Cargar datos del contexto
+  // ==========================
+  useEffect(() => {
+    if (!user) return;
 
     setProfile({
       name: user.currentProfile?.name ?? 'Sin nombre',
       email: user.userName ?? 'Sin correo',
-      birthDate: '1995-05-23', 
+      birthDate: '1995-05-23',
       city: user.currentProfile?.internalDivisionName ?? 'Sin división',
     });
+
+    setTwoFactorEnabled(user?.twoFactorEnabled ?? false);
   }, [user]);
 
   const birthVisible = useMemo(() => {
     try {
       const d = new Date(profile.birthDate);
-      return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')
-        }/${d.getFullYear()}`;
+      return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}/${d.getFullYear()}`;
     } catch {
       return profile.birthDate;
     }
@@ -90,6 +101,27 @@ export default function ProfileScreen() {
         screen: 'ChangePassword',
       });
     }
+  };
+
+  // ==============================
+  // 🔥 Confirmar cambio de 2FA
+  // ==============================
+  const confirmChange2FA = async () => {
+    if (pendingValue === null) return;
+
+    setLoading2FA(true);
+    setError2FA('');
+
+    try {
+      const res = await authService.toggleTwoFactor(); // Llamada real
+      // setTwoFactorEnabled(res.twoFactorEnabled);
+    } catch (err: any) {
+      setError2FA('No se pudo actualizar la autenticación en dos pasos.');
+    }
+
+    setLoading2FA(false);
+    setShowConfirmModal(false);
+    setPendingValue(null);
   };
 
   return (
@@ -119,27 +151,18 @@ export default function ProfileScreen() {
                   },
                 ]}
               >
-                <Text
-                  style={{
-                    color: '#fff',
-                    fontSize: 36,
-                    fontWeight: 'bold',
-                  }}
-                >
+                <Text style={{ color: '#fff', fontSize: 36, fontWeight: 'bold' }}>
                   {UserAvatarService.getInitials(user)}
                 </Text>
               </View>
             )}
-
           </View>
 
           <Text style={styles.title}>Perfil</Text>
-          <Text style={styles.subtitle}>
-            {'Información personal'}
-          </Text>
+          <Text style={styles.subtitle}>{'Información personal'}</Text>
         </View>
 
-        {/* Card */}
+        {/* Card información */}
         <View style={styles.card}>
           <Field
             label="Nombre"
@@ -171,6 +194,33 @@ export default function ProfileScreen() {
           />
         </View>
 
+        {/* Card 2FA */}
+        <View style={styles.card}>
+          <Text style={styles.label}>Autenticación en dos pasos (2FA)</Text>
+
+          <View style={styles.twofaRow}>
+            <Text style={styles.twofaStatus}>
+              {twoFactorEnabled ? 'Activado' : 'Desactivado'}
+            </Text>
+
+            {loading2FA ? (
+              <ActivityIndicator color="#2F6D8B" />
+            ) : (
+              <Switch
+                value={twoFactorEnabled}
+                onValueChange={(value) => {
+                  setPendingValue(value);
+                  setShowConfirmModal(true);
+                }}
+                thumbColor={twoFactorEnabled ? '#2F6D8B' : '#ccc'}
+                trackColor={{ true: '#A7CBE2', false: '#d3d3d3' }}
+              />
+            )}
+          </View>
+
+          {error2FA ? <Text style={styles.errBackend}>{error2FA}</Text> : null}
+        </View>
+
         {/* Actions */}
         <View style={styles.actionsRow}>
           <GhostButton
@@ -185,28 +235,70 @@ export default function ProfileScreen() {
             onPress={goToChangePassword}
             kind="primary"
           />
-          {/* 🔹 Nuevo botón para solicitar cambio */}
           <GhostButton
             label="Solicitar cambio de datos"
             icon="create-outline"
-            onPress={() =>  navigation.navigate('MyRequests' as never)}
+            onPress={() => navigation.navigate('MyRequests' as never)}
             kind="primary"
           />
         </View>
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* ===========================
+          MODAL CONFIRMACIÓN 2FA
+      ============================*/}
+      <Modal
+        visible={showConfirmModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowConfirmModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              {pendingValue ? 'Activar' : 'Desactivar'} autenticación en dos pasos
+            </Text>
+
+            <Text style={styles.modalMsg}>
+              ¿Estás seguro que deseas {pendingValue ? 'activar' : 'desactivar'} la
+              autenticación en dos pasos?
+            </Text>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalCancel]}
+                onPress={() => {
+                  setShowConfirmModal(false);
+                  setPendingValue(null);
+                }}
+              >
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalConfirm]}
+                onPress={confirmChange2FA}
+              >
+                <Text style={styles.modalConfirmText}>Confirmar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
-/// <summary>
-/// Componente auxiliar para campos del perfil.
-/// </summary>
+/* ========================
+   COMPONENTE DE CAMPO
+======================== */
 type FieldProps = React.ComponentProps<typeof TextInput> & {
   label: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
 };
+
 function Field({ label, icon, editable, ...rest }: FieldProps) {
   return (
     <View style={styles.fieldBlock}>
@@ -224,9 +316,9 @@ function Field({ label, icon, editable, ...rest }: FieldProps) {
   );
 }
 
-/// <summary>
-/// Botón estilo ghost con ícono.
-/// </summary>
+/* ========================
+   BOTÓN GHOST
+======================== */
 function GhostButton({
   label,
   icon,

@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { tokenStorage } from '../auth/tokenStorage';
 import { ensureFreshAccessToken } from '../http/request';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authService } from './authService';
 
 type AuthContextValue = {
   isAuthenticated: boolean;
@@ -40,8 +42,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       signIn: () => setIsAuthenticated(true),
       signOut: async () => {
-        await tokenStorage.clearTokens();
+        // await tokenStorage.clearTokens();
         setIsAuthenticated(false);
+        authService.logout()
+        await AsyncStorage.clear();
       },
     }),
     [isAuthenticated, loading]

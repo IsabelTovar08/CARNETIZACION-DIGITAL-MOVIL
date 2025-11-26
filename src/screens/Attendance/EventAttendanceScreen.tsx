@@ -10,7 +10,9 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { AttendanceService } from "../../services/http/attendance/AttendanceService";
+import { Subscription } from "rxjs";
 import { styles } from "./EventAttendanceScreen.styles";
+import { attendanceSocket } from "../../services/http/attendance/attendance.socket";
 
 const BG = require("../../img/fondo.png");
 const IMG_FALLBACK = require("../../img/ia.png");
@@ -22,8 +24,14 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
   const [attendances, setAttendances] = useState<any[]>([]);
   const [search, setSearch] = useState("");
 
+  // Mensajito flotante
+  const [liveMessage, setLiveMessage] = useState<string | null>(null);
+
   const attendanceService = new AttendanceService<any, any>();
 
+  /// <summary>
+  /// Cargar asistencias desde API
+  /// </summary>
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -47,9 +55,36 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
     }
   }, [search]);
 
+  /// <summary>
+  /// Conectar WebSocket + cargar datos iniciales
+  /// </summary>
   useEffect(() => {
+    attendanceSocket.connect();
     fetchData();
-  }, [fetchData]);
+
+    // Escuchar entrada / salida en tiempo real
+    const sub: Subscription = attendanceSocket.events$.subscribe((event: any) => {
+      if (!event) return;
+
+      // Mostrar mensaje dependiendo del tipo
+      if (event.type === "entry") {
+        setLiveMessage("Nueva entrada registrada");
+      } else if (event.type === "exit") {
+        setLiveMessage("Nueva salida registrada");
+      }
+
+      // Quitar mensaje después de 2.5 segundos
+      setTimeout(() => setLiveMessage(null), 2500);
+
+      // Recargar tabla
+      fetchData();
+    });
+
+    return () => {
+      sub.unsubscribe();
+      attendanceSocket.disconnect();
+    };
+  }, []);
 
   const renderItem = ({ item }: any) => (
     <View style={styles.row}>
@@ -83,6 +118,32 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
 
   return (
     <ImageBackground source={BG} style={styles.bg} resizeMode="cover">
+      
+      {/* Mensaje flotante */}
+      {liveMessage && (
+        <View
+          style={{
+            position: "absolute",
+            top: 90,
+            left: 0,
+            right: 0,
+            zIndex: 999,
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "rgba(0,0,0,0.75)",
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              borderRadius: 20,
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 14 }}>{liveMessage}</Text>
+          </View>
+        </View>
+      )}
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -110,21 +171,7 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
         </View>
       </View>
 
-      {/* Buscador */}
-      <View style={styles.searchBox}>
-        <Ionicons name="search-outline" size={18} color="#64748B" />
-        <View style={{ flex: 1 }}>
-          <Text
-            style={styles.searchInput}
-            onPress={() => {}}
-            // onChangeText={setSearch}
-          >
-            {search}
-          </Text>
-        </View>
-      </View>
-
-      {/* Tabla */}
+      {/* Tabla header */}
       <View style={styles.tableHeader}>
         <Text style={[styles.th, { flex: 1.4 }]}>Persona</Text>
         <Text style={styles.th}>Entrada</Text>
@@ -132,11 +179,7 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
       </View>
 
       {loading ? (
-        <ActivityIndicator
-          size="large"
-          color="#fff"
-          style={{ marginTop: 50 }}
-        />
+        <ActivityIndicator size="large" color="#fff" style={{ marginTop: 50 }} />
       ) : attendances.length === 0 ? (
         <Text style={styles.noData}>No hay registros...</Text>
       ) : (

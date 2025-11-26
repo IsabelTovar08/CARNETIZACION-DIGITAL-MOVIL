@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import  colors  from '../../theme/colors';
+import colors from '../../theme/colors';
 
 export const colorsA = {
   bg: '#0B1A3AFF',
@@ -83,6 +83,7 @@ export const styles = StyleSheet.create({
 
   card: {
     marginTop: -20,
+    marginBottom: 25,
     marginHorizontal: 16,
     backgroundColor: colorsA.card,
     borderRadius: 20,
@@ -115,7 +116,7 @@ export const styles = StyleSheet.create({
   actionsRow: {
     marginTop: 16,
     paddingHorizontal: 16,
-    gap: 12,
+    gap: 5,
   },
   ghostBtn: {
     height: 48,
@@ -137,4 +138,99 @@ export const styles = StyleSheet.create({
   ghostDanger: { borderColor: colorsA.danger + '33' },
   primaryTxt: { color: colorsA.primary },
   dangerTxt: { color: colorsA.danger },
+
+  twofaRow: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F6F9FC',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1.1,
+    borderColor: '#D4E2EE',
+  },
+
+  twofaStatus: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0E2E42',
+  },
+
+  errBackend: {
+    color: '#C0392B',
+    marginTop: 6,
+    textAlign: 'center',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+
+  /* 🔥 Modal */
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 22,
+  },
+
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    elevation: 8,
+  },
+
+  modalTitle: {
+    color: '#0E2E42',
+    fontSize: 22,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+
+  modalMsg: {
+    marginTop: 10,
+    textAlign: 'center',
+    color: '#4B6578',
+    fontSize: 15,
+  },
+
+  modalActions: {
+    marginTop: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  modalBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  modalCancel: {
+    backgroundColor: '#ECEFF3',
+    marginRight: 10,
+  },
+
+  modalConfirm: {
+    backgroundColor: '#2F6D8B',
+  },
+
+  modalCancelText: {
+    color: '#0E2E42',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+
+  modalConfirmText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+
 });

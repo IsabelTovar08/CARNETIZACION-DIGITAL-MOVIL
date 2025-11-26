@@ -40,20 +40,14 @@ import colors from '../theme/colors';
 import AttendanceScreen from '../screens/Attendance/AttendanceScreen';
 import MyRequestsScreen from '../screens/Profile/RequestChange/MyRequestsScreen';
 import EventAttendanceScreen from '../screens/Attendance/EventAttendanceScreen';
+import NotificationIcon from './NotificationIcon';
+import RequestDetailsScreen from '../screens/Profile/RequestChange/RequestDetailsScreen';
+import NotificationDetailScreen from '../screens/Profile/Notifications/NotificationDetailScreen';
+import ScreenWrapper from './ScreenWrapper';
 
 const PublicStack = createNativeStackNavigator<PublicStackParamList>();
 const PrivateStack = createNativeStackNavigator<PrivateStackParamList>();
 const Tab = createBottomTabNavigator<AppTabParamList>();
-
-/// Icono de notificaciones
-const NotificationIcon = ({ navigation }: any) => (
-  <TouchableOpacity
-    onPress={() => navigation.navigate('Notificaciones')}
-    style={{ marginRight: 16 }}
-  >
-    <Ionicons name="notifications-outline" size={24} color={colors.text} />
-  </TouchableOpacity>
-);
 
 /// <summary>
 /// Contenedor para mostrar el icono de notificaciones y el del perfil juntos
@@ -128,6 +122,17 @@ function HomePrivateStack() {
         component={EventAttendanceScreen}
         options={{ headerShown: false }}
       />
+      <PrivateStack.Screen
+        name="RequestDetails"
+        component={RequestDetailsScreen}
+        options={{ headerShown: false }}
+      />
+      <PrivateStack.Screen
+        name="NotificationDetail"
+        component={NotificationDetailScreen}
+        options={{ title: "Detalle de Notificación" }}
+      />
+
 
     </PrivateStack.Navigator>
   );
@@ -207,7 +212,15 @@ function PeoplePrivateStack() {
         headerRight: () => <HeaderRightIcons navigation={navigation} />,
       })}
     >
-      <PrivateStack.Screen name="Perfil" component={ProfileScreen} />
+     <PrivateStack.Screen
+        name="Perfil"
+        children={() => (
+          <ScreenWrapper>
+            <ProfileScreen />
+          </ScreenWrapper>
+        )}
+      />
+
       <PrivateStack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       <PrivateStack.Screen
         name="RequestChange"

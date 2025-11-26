@@ -4,16 +4,45 @@ import AttendanceCard from '../../../components/AttendanceCard/AttendanceCard';
 import { palette } from '../../../components/AttendanceCard/attendanceCard.styles';
 import { NotificationService } from '../../../services/http/Notifications/NotificationService';
 import { notificationHub } from '../../../services/http/Notifications/NotificationHubService';
+import { notificationStore } from '../../../services/http/Notifications/NotificationStore';
+import { Picker } from '@react-native-picker/picker';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PrivateStackParamList } from '../../../navigation/types';
 
 // import dayjs from 'dayjs';
 const BG_IMAGE = require('../../../img/fondo-azul.png');
 
 const notificationService = new NotificationService<any, any>();
 
+type NavigationProp = NativeStackNavigationProp<
+  PrivateStackParamList,
+  'Notificaciones'
+>;
+
 export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterType, setFilterType] = useState<number | null>(null); // null = todos
+  const [showOnlyUnread, setShowOnlyUnread] = useState(false);
 
+  const navigation = useNavigation<NavigationProp>();
+
+  const getIconByType = (type: number) => {
+    switch (type) {
+      case 1: return 'cog-outline';       // Sistema
+      case 2: return 'calendar-outline';  // Recordatorio
+      case 3: return 'alert-circle-outline'; // Advertencia
+      case 4: return 'information-outline';  // Información
+      default: return 'notifications-outline';
+    }
+  };
+
+  const filteredNotifications = notifications.filter(n => {
+    const matchesType = filterType === null || n.notificationTypeId === filterType;
+    const matchesRead = !showOnlyUnread || !n.readDate;
+    return matchesType && matchesRead;
+  });
   useEffect(() => {
     notificationService
       .getNotificationsByUserId()
@@ -21,9 +50,17 @@ export default function NotificationsScreen() {
         console.log('🔍 Respuesta completa:', response);
 
         if (response.status && Array.isArray(response.data)) {
-          setNotifications(response.data);
-          console.log('✅ Notificaciones obtenidas:', response.data);
-        } else {
+          const data = response.data;
+
+          setNotifications(data);
+
+          // contar no leídas traídas del backend
+          const unreadFromBackend = data.filter(n => !n.readDate).length;
+          notificationStore.set(unreadFromBackend);
+
+          console.log("📬 No leídas desde backend:", unreadFromBackend);
+        }
+        else {
           console.warn('⚠️ Error al obtener notificaciones:', response.message);
         }
       })
@@ -31,7 +68,6 @@ export default function NotificationsScreen() {
         console.error('❌ Error al obtener notificaciones:', error);
       })
       .finally(() => setLoading(false));
-
     notificationHub.subscribe((newNotif) => {
       console.log("📬 Nueva notificación recibida:", newNotif);
 
@@ -66,11 +102,9 @@ export default function NotificationsScreen() {
   };
 
   // 🔹 Agrupamos notificaciones
-  const today = notifications.filter((n) => isToday(n.sendDate));
-  const yesterday = notifications.filter((n) => isYesterday(n.sendDate));
-  const older = notifications.filter(
-    (n) => !isToday(n.sendDate) && !isYesterday(n.sendDate)
-  );
+  const today = filteredNotifications.filter((n) => isToday(n.sendDate));
+  const yesterday = filteredNotifications.filter((n) => isYesterday(n.sendDate));
+  const older = filteredNotifications.filter((n) => !isToday(n.sendDate) && !isYesterday(n.sendDate));
 
   const sections = [
     { title: 'Hoy', data: today },
@@ -97,6 +131,29 @@ export default function NotificationsScreen() {
   return (
     <ImageBackground source={BG_IMAGE} style={s.background} resizeMode="cover">
       <SafeAreaView style={{ flex: 1 }}>
+        <View style={s.filterBar}>
+          <View style={s.pickerWrapper}>
+            <Text style={s.filterLabel}>Filtrar por tipo:</Text>
+            <View style={s.pickerContainer}>
+              <Picker
+                selectedValue={filterType}
+                onValueChange={(value) => setFilterType(value)}
+                style={s.picker}
+                dropdownIconColor={palette.primary}
+              >
+                <Picker.Item label="Todos" value={null} />
+                <Picker.Item label="Sistema" value={1} />
+                <Picker.Item label="Recordatorio" value={2} />
+                <Picker.Item label="Advertencia" value={3} />
+                <Picker.Item label="Información" value={4} />
+              </Picker>
+            </View>
+          </View>
+
+          <Text style={s.toggleUnread} onPress={() => setShowOnlyUnread(prev => !prev)}>
+            {showOnlyUnread ? '📭 Solo no leídas' : '📬 Todas'}
+          </Text>
+        </View>
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.notificationId.toString()}
@@ -108,14 +165,33 @@ export default function NotificationsScreen() {
           SectionSeparatorComponent={() => <View style={{ height: 8 }} />}
           renderItem={({ item }) => (
             <AttendanceCard
-              icon="notifications-outline"
+              icon={getIconByType(item.notificationTypeId)}
               key={item.notificationId}
               title={item.title}
               subtitle={item.message}
               variant="notification"
               showChevron
               unread={!item.readDate}
-              onPress={() => console.log('🔔 Notificación seleccionada:', item)}
+              onPress={async () => {
+                navigation.navigate("NotificationDetail", { notification: item });
+
+                // si NO está leída → marcar y actualizar visualmente
+                if (!item.readDate) {
+                  await notificationService.markAsRead(item.notificationReceivedId);
+
+                  setNotifications(prev =>
+                    prev.map(n =>
+                      n.notificationReceivedId === item.notificationReceivedId
+                        ? { ...n, readDate: new Date().toISOString() }
+                        : n
+                    )
+                  );
+
+                  notificationStore.decrease();
+                }
+              }}
+
+
             />
           )}
         />
@@ -139,12 +215,73 @@ const s = StyleSheet.create({
     backgroundColor: palette.bg,
   },
   loadingText: {
-    fontSize: 16
+    fontSize: 16,
   },
-  /** Fondo general de imagen */
   background: {
     flex: 1,
     width: '100%',
     height: '100%',
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: palette.bg,
+  },
+  filterButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: palette.primaryLight,
+  },
+  filterButtonActive: {
+    backgroundColor: palette.primary,
+  },
+  filterText: {
+    color: palette.primary,
+    fontWeight: '600',
+  },
+  filterTextActive: {
+    color: 'white',
+  },
+  filterBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: palette.bg,
+  },
+  pickerWrapper: {
+    flex: 1,
+  },
+  filterLabel: {
+    fontWeight: '600',
+    color: palette.primary,
+    marginBottom: 1,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: palette.primaryLight,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+    color: palette.primary,
+  },
+  toggleUnread: {
+    marginLeft: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: palette.primaryLight,
+    borderRadius: 8,
+    color: palette.primary,
+    fontWeight: '600',
   },
 });

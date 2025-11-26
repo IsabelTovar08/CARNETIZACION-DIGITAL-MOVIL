@@ -1,8 +1,8 @@
 import { StyleSheet, Dimensions } from 'react-native';
 
 const { width } = Dimensions.get('window');
-export const CARD_WIDTH = width * 0.88;
-export const CARD_HEIGHT = CARD_WIDTH / 1.586;
+export const CARD_WIDTH = width * 0.80;   // Tamaño del carnet
+export const CARD_HEIGHT = CARD_WIDTH * 1.6; // Proporción real 451 x 697
 export const GAP = 16;
 
 export const styles = StyleSheet.create({
@@ -57,51 +57,71 @@ export const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
   },
+
+  // 📌 NUEVO — Contenedor que permite background SVG
   cardBackground: {
     flex: 1,
     width: '100%',
     height: '100%',
+    position: 'relative',  // Necesario para overlay
+  },
+
+  // 📌 NUEVO — SVG de fondo como background
+  svgBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: 0,
   },
 
   // ===== FRONT SIDE - QR =====
   qrContainer: {
     position: 'absolute',
-    top: 20,
+    top: 40,
     right: 25,
     backgroundColor: 'white',
     padding: 6,
     borderRadius: 8,
+    zIndex: 2,
   },
 
   // ===== FRONT SIDE - FOTO =====
   photo: {
     position: 'absolute',
-    top: 110,
+    top: 190,
     left: 30,
-    width: 100,
-    height: 100,
+    width: 110,
+    height: 130,
     borderRadius: 8,
+    zIndex: 2,
   },
 
   // ===== FRONT SIDE - NOMBRE Y PERFIL =====
   nameContainer: {
     position: 'absolute',
-    top: 115,
-    left: 145,
+    top: 180,
+    left: 150,
     right: 25,
+    zIndex: 2,
   },
   name: {
-    fontSize: 19,
+    fontSize: 25,
     fontWeight: 'bold',
     color: '#000',
     lineHeight: 23,
   },
   profile: {
-    fontSize: 14,
+    position: 'absolute',
+    top: 130,      // ⬅ AJUSTA AQUÍ LA ALTURA DEBAJO DEL QR
+    right: 30,
+    fontSize: 18,
+    fontWeight: '600',
     color: '#374151',
-    marginTop: 3,
-    lineHeight: 17,
+    zIndex: 3,
   },
+
   area: {
     fontSize: 13,
     color: '#6b7280',
@@ -111,16 +131,18 @@ export const styles = StyleSheet.create({
   // ===== FRONT SIDE - TELÉFONO =====
   phoneContainer: {
     position: 'absolute',
-    top: 235,
+    top: 330,
     left: 35,
+    zIndex: 2,
   },
 
   // ===== FRONT SIDE - RH =====
   rhContainer: {
     position: 'absolute',
-    top: 235,
+    top: 320,
     right: 55,
     alignItems: 'center',
+    zIndex: 2,
   },
   rhValue: {
     fontSize: 16,
@@ -132,8 +154,9 @@ export const styles = StyleSheet.create({
   // ===== FRONT SIDE - CORREO =====
   emailContainer: {
     position: 'absolute',
-    top: 290,
+    top: 390,
     left: 35,
+    zIndex: 2,
   },
 
   // ===== FRONT SIDE - LABELS Y VALUES =====
@@ -155,6 +178,7 @@ export const styles = StyleSheet.create({
     left: 35,
     flexDirection: 'row',
     alignItems: 'center',
+    zIndex: 2,
   },
   idLabel: {
     fontSize: 13,
@@ -176,6 +200,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
+    zIndex: 2,
   },
   pdfText: {
     color: '#fff',
@@ -190,6 +215,7 @@ export const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
+    zIndex: 2,
   },
   backTitleBox: {
     backgroundColor: '#4CAF50',
@@ -213,6 +239,7 @@ export const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     color: '#0b3b57',
+    zIndex: 2,
   },
   backBullet1: {
     position: 'absolute',
@@ -222,6 +249,7 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     color: '#000',
     lineHeight: 17,
+    zIndex: 2,
   },
   backBullet2: {
     position: 'absolute',
@@ -231,6 +259,7 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     color: '#000',
     lineHeight: 17,
+    zIndex: 2,
   },
 
   // ===== BACK SIDE - DIRECCIÓN =====
@@ -238,6 +267,7 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 55,
     left: 35,
+    zIndex: 2,
   },
 
   // ===== BACK SIDE - CONTACTO =====
@@ -246,6 +276,7 @@ export const styles = StyleSheet.create({
     bottom: 55,
     right: 35,
     alignItems: 'flex-end',
+    zIndex: 2,
   },
   backContactValue: {
     fontSize: 12,
@@ -267,4 +298,88 @@ export const styles = StyleSheet.create({
     marginTop: 3,
     lineHeight: 16,
   },
+  webviewBackground: {
+    position: 'absolute',
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    zIndex: 0,
+    backgroundColor: 'transparent',
+    // Asegura que el SVG siempre se escale para llenar el fondo
+    transform: [
+      { scale: 1 },      // Ajusta el tamaño sin cortar
+    ],
+
+    // Evita recortes visuales
+    overflow: 'visible',
+  },
+
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 2,
+  },
+
+  flipButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 30,
+    backgroundColor: '#0b3b57',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+  },
+
+  flipText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+
+  externalButtonContainer: {
+    width: CARD_WIDTH,
+    alignSelf: 'center',
+    marginTop: 10, // súbelo o bájalo aquí
+    alignItems: 'center',
+  },
+
+  externalPdfButton: {
+    backgroundColor: '#0b3b57',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+  },
+
+  externalPdfText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+
+  companyContainer: {
+    position: 'absolute',
+    top: 75,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 20,
+  },
+
+  companyLogo: {
+    width: 60,
+    height: 60,
+    marginRight: 10,
+    resizeMode: 'contain',
+  },
+
+  companyName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ffffff',  // blanco para que se vea encima del fondo verde
+    maxWidth: CARD_WIDTH * 0.3,
+  },
+
+
 });

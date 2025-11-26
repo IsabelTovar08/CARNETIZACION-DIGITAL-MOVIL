@@ -10,6 +10,7 @@ export interface UserProfile {
   email?: string;
   phoneNumber?: string;
   photoUrl?: string;
+  twoFactorEnabled?: boolean;
   roles: Array<{
     id: number;
     name: string;
@@ -29,6 +30,7 @@ export interface UserProfile {
     qrCode: string;
     uniqueId?: string;
     name?: string;
+    userPhotoUrl?: string;
   };
   otherCards?: Array<{
     id: number;

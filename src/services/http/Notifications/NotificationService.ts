@@ -32,4 +32,25 @@ export class NotificationService<
       })
     );
   }
+
+  getCount() {
+    return httpWrapper.handleRequest(
+      request<number>(`${this.base}/count`, {
+        method: 'GET'
+      })
+    );
+  }
+
+  /// <summary>
+  /// Marca una notificación como leída.
+  /// Endpoint: PUT /api/NotificationReceived/mark-as-read/{id}
+  /// </summary>
+  public markAsRead(id: number) {
+    return httpWrapper.handleRequest(
+      request<ApiResponse<any>>(`/NotificationReceived/mark-as-read/${id}`, {
+        method: 'PUT'
+      })
+    );
+  }
+
 }
