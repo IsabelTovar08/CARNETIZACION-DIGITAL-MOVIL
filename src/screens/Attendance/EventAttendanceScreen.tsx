@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { AttendanceService } from "../../services/http/attendance/AttendanceService";
@@ -24,14 +25,19 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
   const [attendances, setAttendances] = useState<any[]>([]);
   const [search, setSearch] = useState("");
 
-  // Mensajito flotante
+  // Modal detalle
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailData, setDetailData] = useState<any[]>([]);
+  const [detailPerson, setDetailPerson] = useState<any>(null);
+
   const [liveMessage, setLiveMessage] = useState<string | null>(null);
 
   const attendanceService = new AttendanceService<any, any>();
 
-  /// <summary>
-  /// Cargar asistencias desde API
-  /// </summary>
+  // ============================================================
+  // CARGAR ASISTENCIAS
+  // ============================================================
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -55,28 +61,19 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
     }
   }, [search]);
 
-  /// <summary>
-  /// Conectar WebSocket + cargar datos iniciales
-  /// </summary>
+  // ============================================================
+  // WEBSOCKET
+  // ============================================================
   useEffect(() => {
     attendanceSocket.connect();
     fetchData();
 
-    // Escuchar entrada / salida en tiempo real
     const sub: Subscription = attendanceSocket.events$.subscribe((event: any) => {
       if (!event) return;
 
-      // Mostrar mensaje dependiendo del tipo
-      if (event.type === "entry") {
-        setLiveMessage("Nueva entrada registrada");
-      } else if (event.type === "exit") {
-        setLiveMessage("Nueva salida registrada");
-      }
-
-      // Quitar mensaje después de 2.5 segundos
+      setLiveMessage(event.type === "entry" ? "Nueva entrada registrada" : "Nueva salida registrada");
       setTimeout(() => setLiveMessage(null), 2500);
 
-      // Recargar tabla
       fetchData();
     });
 
@@ -86,6 +83,27 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
     };
   }, []);
 
+  // ============================================================
+  // MODAL DETALLE
+  // ============================================================
+  const openDetail = async (item: any) => {
+    setDetailPerson(item);
+    setDetailVisible(true);
+    setDetailLoading(true);
+
+    try {
+      const res = await attendanceService.getAllByPersonEvent(item.personId, event.id);
+      setDetailData(res?.data ?? []);
+    } catch (e) {
+      console.log("Error cargando detalle:", e);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  // ============================================================
+  // RENDER ITEM
+  // ============================================================
   const renderItem = ({ item }: any) => (
     <View style={styles.row}>
       <View style={styles.colName}>
@@ -113,12 +131,16 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
             : "-"}
         </Text>
       </View>
+
+      {/* ICONO INFO */}
+      <TouchableOpacity onPress={() => openDetail(item)} style={{ paddingHorizontal: 8 }}>
+        <Ionicons name="information-circle-outline" size={22} color="#38BDF8" />
+      </TouchableOpacity>
     </View>
   );
 
   return (
     <ImageBackground source={BG} style={styles.bg} resizeMode="cover">
-      
       {/* Mensaje flotante */}
       {liveMessage && (
         <View
@@ -176,6 +198,7 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
         <Text style={[styles.th, { flex: 1.4 }]}>Persona</Text>
         <Text style={styles.th}>Entrada</Text>
         <Text style={styles.th}>Salida</Text>
+        <Text style={[styles.th, { width: 40 }]} />
       </View>
 
       {loading ? (
@@ -185,6 +208,61 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
       ) : (
         <FlatList data={attendances} renderItem={renderItem} />
       )}
+
+      {/* ============================================================
+          MODAL DETALLE
+      ============================================================ */}
+      <Modal animationType="fade" transparent visible={detailVisible}>
+        <View style={styles.modalBg}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Detalles de asistencia</Text>
+
+            {detailPerson && (
+              <Text style={styles.modalSubtitle}>{detailPerson.personFullName}</Text>
+            )}
+
+            {detailLoading ? (
+              <ActivityIndicator color="#38BDF8" style={{ marginVertical: 20 }} />
+            ) : detailData.length === 0 ? (
+              <Text style={styles.noData}>No hay asistencias registradas</Text>
+            ) : (
+              <View>
+                {detailData.map((d, i) => (
+                  <View key={i} style={styles.detailRow}>
+                    <Text style={styles.detailText}>
+                      Entrada:{" "}
+                      {d.timeOfEntry
+                        ? new Date(d.timeOfEntry).toLocaleString()
+                        : "-"}
+                    </Text>
+
+                    <Text style={styles.detailText}>
+                      Salida:{" "}
+                      {d.timeOfExit
+                        ? new Date(d.timeOfExit).toLocaleString()
+                        : "-"}
+                    </Text>
+
+                    <Text style={styles.detailText}>
+                      Punto entrada: {d.accessPointOfEntryName ?? "-"}
+                    </Text>
+                    <Text style={styles.detailText}>
+                      Punto salida: {d.accessPointOfExitName ?? "-"}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.modalClose}
+              onPress={() => setDetailVisible(false)}
+            >
+              <Text style={styles.modalCloseText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ImageBackground>
   );
 }

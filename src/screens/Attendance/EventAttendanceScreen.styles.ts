@@ -1,130 +1,206 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 
 export const styles = StyleSheet.create({
   bg: {
     flex: 1,
-    paddingTop: 40,
-    paddingHorizontal: 14,
+    width: "100%",
+    height: "100%",
   },
 
-  // Header
+  // =========================
+  // HEADER
+  // =========================
   header: {
+    paddingTop: Platform.OS === "android" ? 40 : 20,
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14,
+    gap: 12,
   },
   headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "700",
-    marginLeft: 12,
-    textShadowColor: "rgba(0,0,0,0.4)",
-    textShadowRadius: 4,
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "600",
   },
 
-  // Event card
+  // =========================
+  // EVENT CARD (mejorado)
+  // =========================
   eventCard: {
-    backgroundColor: "rgba(15,23,42,0.6)", // MÁS OSCURO Y VISIBLE
-    borderRadius: 12,
-    flexDirection: "row",
-    padding: 10,
-    marginBottom: 16,
+    marginHorizontal: 16,
+    marginTop: 20,
+    backgroundColor: "rgba(255,255,255,0.35)", // más visible
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(255,255,255,0.45)",
+    flexDirection: "row",
+    gap: 12,
+    ...Platform.select({
+      web: { backdropFilter: "blur(14px)" },
+      default: {},
+    }),
   },
+
   eventImg: {
     width: 70,
     height: 70,
-    borderRadius: 10,
+    borderRadius: 12,
   },
+
   eventBody: {
-    marginLeft: 10,
+    flex: 1,
     justifyContent: "center",
   },
+
   eventTitle: {
-    color: "#FFFFFF",
     fontSize: 18,
+    color: "#1e293b",
     fontWeight: "700",
+    marginBottom: 3,
   },
+
   eventMeta: {
-    color: "#93C5FD",
-    fontSize: 12,
-    marginTop: 4,
-  },
-
-  // Search box
-  searchBox: {
-    backgroundColor: "rgba(30,41,59,0.85)", // MÁS OSCURO
-    borderRadius: 12,
-    padding: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
-  },
-  searchInput: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    marginLeft: 8,
-  },
-
-  // Table header
-  tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "rgba(59,130,246,0.25)", // AZUL SUAVE DESTACADO
-    paddingVertical: 8,
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    marginBottom: 4,
-  },
-  th: {
-    flex: 1,
-    color: "#E0F2FE",
+    color: "#334155",
     fontSize: 13,
-    fontWeight: "700",
-    textAlign: "center",
+    fontWeight: "500",
   },
 
-  // Table rows
+  // =========================
+  // TABLE HEADER (visibilidad mejorada)
+  // =========================
+  tableHeader: {
+    marginTop: 26,
+    marginHorizontal: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(148,163,184,0.45)", // visible
+  },
+
+  th: {
+    color: "#0f172a",   // fuerte y legible
+    fontSize: 14,
+    fontWeight: "700",
+    flex: 1,
+    textAlign: "left",
+  },
+
+  // =========================
+  // ROWS LISTA
+  // =========================
   row: {
     flexDirection: "row",
-    paddingVertical: 10,
-    paddingHorizontal: 4,
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)",
-    backgroundColor: "rgba(15,23,42,0.55)", // Dark blue
-    marginBottom: 3,
-    borderRadius: 8,
+    borderBottomColor: "rgba(148,163,184,0.45)", // Slate-400
   },
 
   colName: {
     flex: 1.4,
-    justifyContent: "center",
-  },
-  col: {
-    flex: 1,
-    justifyContent: "center",
   },
 
-  // Name
   name: {
-    color: "#FFFFFF",
+    color: "#1e293b",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+
+  col: {
+    flex: 1,
+    alignItems: "center",
+  },
+
+  time: {
+    color: "#334155",
     fontSize: 14,
     fontWeight: "500",
   },
 
-  time: {
-    color: "#BAE6FD",
-    fontSize: 13,
-    textAlign: "center",
-  },
-
   noData: {
-    color: "#94A3B8",
+    color: "#475569",
     textAlign: "center",
-    marginTop: 30,
+    marginTop: 40,
     fontSize: 15,
     fontWeight: "500",
+  },
+
+  // =========================
+  // MODAL
+  // =========================
+  modalBg: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+
+  modalCard: {
+    width: "100%",
+    maxWidth: 380,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    paddingBottom: 26,
+
+    ...Platform.select({
+      web: { boxShadow: "0 12px 28px rgba(0,0,0,0.25)" },
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 10,
+      },
+    }),
+  },
+
+  modalTitle: {
+    fontSize: 20,
+    color: "#1e293b",
+    fontWeight: "700",
+    marginBottom: 6,
+  },
+
+  modalSubtitle: {
+    fontSize: 15,
+    color: "#475569",
+    marginBottom: 16,
+  },
+
+  modalClose: {
+    marginTop: 20,
+    backgroundColor: "#2563eb",
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+
+  modalCloseText: {
+    textAlign: "center",
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  // =========================
+  // DETALLE - FILAS
+  // =========================
+  detailRow: {
+    backgroundColor: "#f1f5f9",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+  },
+
+  detailText: {
+    color: "#334155",
+    fontSize: 14,
+    marginBottom: 2,
   },
 });

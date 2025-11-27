@@ -20,6 +20,8 @@ export interface AccessPointDto {
   typeId: number;
   type?: string;
   isDeleted: boolean;
+  qrCodeKey?: string;
+  code?: string;
 }
 
 export interface ScheduleDto {

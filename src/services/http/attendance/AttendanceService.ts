@@ -77,20 +77,20 @@ export class AttendanceService<
   /// Endpoint: POST /api/Attendance/register-entry
   /// </summary>
   public async registerEntry(qrCodeKey: string) {
-  const url = `${this.base}/register-entry`;
+    const url = `${this.base}/register-entry`;
 
-  return httpWrapper.handleRequest(
-    request<ApiResponse<any>>(url, {
-      method: "POST",
-      body: {
-        id: 0,
-        personId: 0,
-        time: new Date().toISOString(),
-        qrCodeKey
-      }
-    })
-  );
-}
+    return httpWrapper.handleRequest(
+      request<ApiResponse<any>>(url, {
+        method: "POST",
+        body: {
+          id: 0,
+          personId: 0,
+          time: new Date().toISOString(),
+          qrCodeKey
+        }
+      })
+    );
+  }
 
 
   /// <summary>
@@ -107,5 +107,17 @@ export class AttendanceService<
       })
     );
   }
+
+  /// <summary>
+  /// Obtiene TODAS las asistencias de una persona en un evento
+  /// Endpoint: GET /api/Attendance/all-by-person-event
+  /// </summary>
+  public async getAllByPersonEvent(personId: number, eventId: number) {
+    const url = `${this.base}/all-by-person-event?personId=${personId}&eventId=${eventId}`;
+    return httpWrapper.handleRequest(
+      request<any>(url, { method: "GET" })
+    );
+  }
+
 
 }

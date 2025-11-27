@@ -24,6 +24,7 @@ export type PrivateStackParamList = {
   EventAttendance: { event: any};
   RequestDetails: { item: any };
   NotificationDetail: { notification: any};
+  EventDetail: {item: any};
 };
 
 export type AppTabParamList = {

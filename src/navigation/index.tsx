@@ -44,6 +44,7 @@ import NotificationIcon from './NotificationIcon';
 import RequestDetailsScreen from '../screens/Profile/RequestChange/RequestDetailsScreen';
 import NotificationDetailScreen from '../screens/Profile/Notifications/NotificationDetailScreen';
 import ScreenWrapper from './ScreenWrapper';
+import EventDetailScreen from '../screens/Attendance/EventDetailScreen';
 
 const PublicStack = createNativeStackNavigator<PublicStackParamList>();
 const PrivateStack = createNativeStackNavigator<PrivateStackParamList>();
@@ -161,6 +162,12 @@ function AttendancePrivateStack() {
         component={NotificationsScreen}
         options={{ title: 'Notificaciones' }}
       />
+      <PrivateStack.Screen name="EventDetail" component={EventDetailScreen} />
+      <PrivateStack.Screen
+        name="EventAttendance"
+        component={EventAttendanceScreen}
+        options={{ headerShown: false }}
+      />
     </PrivateStack.Navigator>
   );
 }
@@ -212,7 +219,7 @@ function PeoplePrivateStack() {
         headerRight: () => <HeaderRightIcons navigation={navigation} />,
       })}
     >
-     <PrivateStack.Screen
+      <PrivateStack.Screen
         name="Perfil"
         children={() => (
           <ScreenWrapper>

@@ -28,7 +28,9 @@ export default function QrReaderScreen() {
 
   const camRef = useRef<CameraView>(null);
 
-  // Pedir permisos
+  // ----------------------------------------------------------
+  // 🔵 PEDIR PERMISOS DE CÁMARA
+  // ----------------------------------------------------------
   useEffect(() => {
     if (permission && permission.status === 'undetermined') {
       requestPermission();
@@ -42,6 +44,9 @@ export default function QrReaderScreen() {
     setLoading(false);
   };
 
+  // ----------------------------------------------------------
+  // 🔵 ESCANEO DEL QR
+  // ----------------------------------------------------------
   const onBarCodeScanned = useCallback(
     ({ data }: { data: string }) => {
       if (scanned) return;
@@ -50,55 +55,58 @@ export default function QrReaderScreen() {
       setQrValue(data);
       Vibration.vibrate(60);
 
-      handleAttendance(data);
+      // 🚨 AHORA PEDIMOS CONFIRMACIÓN ANTES DE REGISTRAR ENTRADA
+      setModal({
+        title: 'Confirmar entrada',
+        message: '¿Deseas registrar la entrada?',
+        type: 'confirm-entry',
+        qrCodeKey: data,
+      });
     },
     [scanned]
   );
 
   // ----------------------------------------------------------
-  // 🔥 PROCESAR LA ASISTENCIA
+  // 🔥 PROCESAR ENTRADA
   // ----------------------------------------------------------
   const handleAttendance = async (qrCodeKey: string) => {
     try {
       setLoading(true);
 
-      // 1) Intentar entrada
       const entryRes = await attendanceService.registerEntry(qrCodeKey);
 
       if (entryRes?.success) {
         setModal({
-          title: "Entrada registrada",
-          message: entryRes?.message ?? "Entrada registrada correctamente.",
-          type: "entry",
+          title: 'Entrada registrada',
+          message: entryRes?.message ?? 'Entrada registrada correctamente.',
+          type: 'entry',
         });
         Vibration.vibrate([0, 50, 40, 50]);
         return;
       }
 
-      // Entrada ya existente → preguntar salida
-      if (entryRes?.message?.includes("¿Desea realizar la salida?")) {
+      // Entrada encontrada → preguntar salida
+      if (entryRes?.message?.includes('¿Desea realizar la salida?')) {
         setModal({
-          title: "Entrada existente",
+          title: 'Entrada existente',
           message: entryRes.message,
-          type: "ask-exit",
+          type: 'ask-exit',
           qrCodeKey,
         });
         return;
       }
 
-      // Error estándar
       setModal({
-        title: "Error",
-        message: entryRes?.message ?? "No se pudo registrar la asistencia.",
-        type: "error",
+        title: 'Error',
+        message: entryRes?.message ?? 'No se pudo registrar la asistencia.',
+        type: 'error',
       });
-
     } catch (err) {
-      console.log("❌ Error:", err);
+      console.log('❌ Error:', err);
       setModal({
-        title: "Error",
-        message: "Error de conexión.",
-        type: "error",
+        title: 'Error',
+        message: 'Error de conexión.',
+        type: 'error',
       });
     } finally {
       setLoading(false);
@@ -106,7 +114,7 @@ export default function QrReaderScreen() {
   };
 
   // ----------------------------------------------------------
-  // 🔥 CONFIRMAR SALIDA
+  // 🔥 PROCESAR SALIDA
   // ----------------------------------------------------------
   const handleExit = async (qrCodeKey: string) => {
     try {
@@ -115,26 +123,25 @@ export default function QrReaderScreen() {
 
       if (exitRes?.success) {
         setModal({
-          title: "Salida registrada",
-          message: exitRes?.message ?? "Salida registrada correctamente.",
-          type: "exit",
+          title: 'Salida registrada',
+          message: exitRes?.message ?? 'Salida registrada correctamente.',
+          type: 'exit',
         });
         Vibration.vibrate([0, 50, 40, 50]);
         return;
       }
 
       setModal({
-        title: "Error",
-        message: exitRes?.message ?? "No se pudo registrar la salida.",
-        type: "error",
+        title: 'Error',
+        message: exitRes?.message ?? 'No se pudo registrar la salida.',
+        type: 'error',
       });
-
     } catch (err) {
-      console.log("❌ Error salida:", err);
+      console.log('❌ Error salida:', err);
       setModal({
-        title: "Error",
-        message: "Error de conexión.",
-        type: "error",
+        title: 'Error',
+        message: 'Error de conexión.',
+        type: 'error',
       });
     } finally {
       setLoading(false);
@@ -142,9 +149,8 @@ export default function QrReaderScreen() {
   };
 
   // ----------------------------------------------------------
-  // RENDER
+  // RENDER PRINCIPAL
   // ----------------------------------------------------------
-
   if (!permission) {
     return (
       <SafeAreaView style={styles.center}>
@@ -167,11 +173,16 @@ export default function QrReaderScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-
       {/* Botón volver */}
       <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
         <Svg width={26} height={26} viewBox="0 0 24 24">
-          <Path d="M15 18l-6-6 6-6" stroke="#fff" strokeWidth={2.2} fill="none" strokeLinecap="round" />
+          <Path
+            d="M15 18l-6-6 6-6"
+            stroke="#fff"
+            strokeWidth={2.2}
+            fill="none"
+            strokeLinecap="round"
+          />
         </Svg>
       </TouchableOpacity>
 
@@ -185,7 +196,7 @@ export default function QrReaderScreen() {
           barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
         />
 
-        {/* 🔥 Overlay con marco de escaneo */}
+        {/* Overlay */}
         <View style={styles.overlay}>
           <View style={styles.mask} />
           <View style={styles.centerRow}>
@@ -207,7 +218,7 @@ export default function QrReaderScreen() {
         <Text style={styles.hint}>Alinea el QR dentro del marco</Text>
       </View>
 
-      {/* 🔵 LOADING overlay */}
+      {/* LOADING overlay */}
       {loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#00ffcc" />
@@ -215,7 +226,7 @@ export default function QrReaderScreen() {
         </View>
       )}
 
-      {/* MODAL RESPUESTAS */}
+      {/* MODAL DE CONFIRMACIÓN / RESPUESTAS */}
       <Modal transparent visible={!!modal}>
         <View style={styles.modalBg}>
           <View style={styles.modalCard}>
@@ -223,7 +234,25 @@ export default function QrReaderScreen() {
             <Text style={styles.modalValue}>{modal?.message}</Text>
 
             <View style={styles.actions}>
-              {modal?.type === "ask-exit" ? (
+
+              {/* 🔵 CONFIRMAR ENTRADA */}
+              {modal?.type === 'confirm-entry' && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.primary]}
+                    onPress={() => handleAttendance(modal.qrCodeKey)}
+                  >
+                    <Text style={styles.actionText}>Sí, registrar entrada</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={styles.actionBtn} onPress={resetScan}>
+                    <Text style={styles.actionText}>Cancelar</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* 🔵 CONFIRMAR SALIDA */}
+              {modal?.type === 'ask-exit' && (
                 <>
                   <TouchableOpacity
                     style={[styles.actionBtn, styles.primary]}
@@ -232,26 +261,26 @@ export default function QrReaderScreen() {
                     <Text style={styles.actionText}>Sí, registrar salida</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[styles.actionBtn]}
-                    onPress={resetScan}
-                  >
+                  <TouchableOpacity style={styles.actionBtn} onPress={resetScan}>
                     <Text style={styles.actionText}>Cancelar</Text>
                   </TouchableOpacity>
                 </>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.actionBtn, styles.primary]}
-                  onPress={resetScan}
-                >
-                  <Text style={styles.actionText}>Cerrar</Text>
-                </TouchableOpacity>
               )}
+
+              {/* 🔵 MENSAJES FINALES */}
+              {modal?.type !== 'confirm-entry' &&
+                modal?.type !== 'ask-exit' && (
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.primary]}
+                    onPress={resetScan}
+                  >
+                    <Text style={styles.actionText}>Cerrar</Text>
+                  </TouchableOpacity>
+                )}
             </View>
           </View>
         </View>
       </Modal>
-
     </SafeAreaView>
   );
 }
