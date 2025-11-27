@@ -31,55 +31,71 @@ export default function HomeScreen({ navigation }: Props) {
   const { user } = useUser();
 
   const [loading, setLoading] = useState(true);
-  const [personId, setPersonId] = useState<number | undefined>();
+  const [personId, setPersonId] = useState<number | null>(null);
   const [eventId, setEventId] = useState<number | undefined>();
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
   const attendanceService = new AttendanceService<any, AttendanceDto>();
 
-
+  // =====================================================================================
+  //   OBTENER PERSON ID — CON LOGS
+  // =====================================================================================
   useEffect(() => {
-    if (user?.currentProfile.personId) {
-      setPersonId(user.currentProfile.personId);
+    console.log("🟦 USER CONTEXT RECIBIDO:", user);
+
+    const id = user?.personId ?? null;
+    setPersonId(id);
+
+    if (id) {
+      console.log("🟩 PERSON ID DETECTADO:", id);
+    } else {
+      console.log("🟥 NO EXISTE PERSON ID EN EL PERFIL");
     }
   }, [user]);
 
-  /// <summary>
-  /// Obtiene las asistencias según filtros.
-  /// </summary>
+  // =====================================================================================
+  //   PETICIÓN A LA API — CON LOGS
+  // =====================================================================================
   const fetchAttendances = async () => {
+    console.log("🚀 EJECUTANDO fetchAttendances()");
+
     setLoading(true);
+
     try {
       const params: any = {
         sortBy: "TimeOfEntry",
         sortDir: "DESC",
         page: 1,
         pageSize: 100,
+        personId: personId, // SIEMPRE SE ENVÍA
       };
 
-      if (personId) params.personId = personId;
-      if (eventId) params.eventId = eventId;
-      if (fromDate) params.fromUtc = fromDate.toISOString();
-      if (toDate) params.toUtc = toDate.toISOString();
+      console.log("📡 PARAMS ENVIADOS A attendance/search:", params);
 
       const response = await attendanceService.searchAttendances(params);
+
+      console.log("✅ RESPUESTA attendance/search:", response);
+
       const items = response?.items ?? [];
 
-      // Agrega nombre de evento por defecto si no tiene
       const fixed = items.map((a: AttendanceDto, i: number) => ({
         ...a,
         eventName: a.eventName || `Evento ${i + 1}`,
       }));
 
       setAttendances(fixed);
+
     } catch (error) {
-      console.error("Error al obtener asistencias:", error);
+      console.error("❌ ERROR EN PETICIÓN DE ASISTENCIAS:", error);
       setAttendances([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // =====================================================================================
+  //   CALCULAR HORAS
+  // =====================================================================================
   const calculateElapsedHours = (timeOfEntry: string | Date, timeOfExit?: string | Date): number => {
     const entry = new Date(timeOfEntry);
     const exit = timeOfExit ? new Date(timeOfExit) : new Date();
@@ -88,28 +104,15 @@ export default function HomeScreen({ navigation }: Props) {
     return Math.round(hours * 100) / 100;
   };
 
-  const fetchAll = useCallback(async () => {
-    try {
-      const resp = await AttendancesApi.getAll();
-      const list = (resp?.data ?? []) as any[];
-
-      const mapped = list.map((item) => ({
-        ...item,
-        elapsedHours: calculateElapsedHours(item.timeOfEntry, item.timeOfExit),
-      }));
-
-      setAttendances(mapped);
-    } catch (e) {
-      console.error('Error al cargar eventos:', e);
-    }
-  }, []);
-
+  // =====================================================================================
+  //   EJECUTAR PETICIÓN AUTOMÁTICAMENTE AL TENER PERSON ID
+  // =====================================================================================
   useEffect(() => {
-    if (personId) {
-      fetchAttendances();
-    }
-  }, [personId]);
+    console.log("🟨 personId CAMBIÓ A:", personId);
 
+    // SIEMPRE HACER LA PETICIÓN (aunque personId sea null)
+    fetchAttendances();
+  }, [personId]);
 
   const goToPastEvents = useCallback(() => navigation.navigate('PastEvents'), [navigation]);
   const goToQrReader = useCallback(() => navigation.navigate('QrReader'), [navigation]);
@@ -155,21 +158,37 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* 🔹 Fondo de imagen en toda la pantalla */}
       <ImageBackground source={BG_IMAGE} style={styles.background} resizeMode="cover">
+
         <FlatList
           data={filteredAttendances}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContent}
+
           ListHeaderComponent={listHeader}
           ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+
+          // =========================================================
+          // 🚀 SI NO HAY ASISTENCIAS → MENSAJE CENTRADO
+          // =========================================================
+          ListEmptyComponent={() =>
+            !loading && (
+              <View style={{ paddingTop: 40, alignItems: 'center' }}>
+                <Text style={{ color: 'white', fontSize: 18 }}>
+                  No hay asistencias recientes.
+                </Text>
+              </View>
+            )
+          }
+
           renderItem={({ item }) => (
             <AttendanceCard
               icon={item.icon as any}
               title={item.eventName ?? 'Sin nombre'}
-              chip={`${item.elapsedHours}h`}
+              chip={`${calculateElapsedHours(item.timeOfEntry, item.timeOfExit)}h`}
             />
           )}
+
           ListFooterComponent={<View style={{ height: 24 }} />}
           showsVerticalScrollIndicator={false}
         />

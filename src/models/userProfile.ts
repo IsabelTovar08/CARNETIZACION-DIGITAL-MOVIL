@@ -11,6 +11,7 @@ export interface UserProfile {
   phoneNumber?: string;
   photoUrl?: string;
   twoFactorEnabled?: boolean;
+  personId: number;
   roles: Array<{
     id: number;
     name: string;
@@ -23,7 +24,6 @@ export interface UserProfile {
   }>;
   currentProfile: {
     id: number;
-    personId: number;
     personName: string;
     internalDivisionName: string;
     profileName: string;
@@ -58,8 +58,8 @@ interface UserContextType {
 export const UserContext = createContext<UserContextType>({
   user: null,
   loading: false,
-  fetchUserData: async () => {},
-  clearUser: async () => {},
+  fetchUserData: async () => { },
+  clearUser: async () => { },
 });
 
 export interface UserResponse {
