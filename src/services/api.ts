@@ -3,13 +3,14 @@ import { request } from './http/request';
 import { httpWrapper } from './HttpServiceWrapper';
 
 export type ApiResponse<T> = {
-  success: boolean;
+  success?: boolean;
+  status?: boolean;
   message?: string;
   data?: T;
 };
 
 export class ApiService<TCreate, TListOrDetail> {
-  private base: string;
+  protected base: string;
   constructor(entidad: string) {
     this.base = `/${entidad}`;
   }
@@ -60,6 +61,15 @@ export class ApiService<TCreate, TListOrDetail> {
   public deleteLogic(id: number | string, token?: string | null) {
     return httpWrapper.handleRequest(
       request<ApiResponse<any>>(`${this.base}/${id}/toggle-active`, { method: 'PATCH', token })
+    );
+  }
+
+  public getEnumOptions(enumType: string) {
+    const url = `/EnumCatalog?type=${enumType}`;
+    return httpWrapper.handleRequest(
+      request<any[]>(url, {
+        method: "GET"
+      })
     );
   }
 }

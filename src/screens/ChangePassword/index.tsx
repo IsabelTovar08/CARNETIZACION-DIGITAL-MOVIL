@@ -1,4 +1,3 @@
-// src/screens/ChangePassword/index.tsx
 import React, { useMemo, useState } from 'react';
 import {
   SafeAreaView,
@@ -9,15 +8,17 @@ import {
   ImageBackground,
   Image,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import { styles } from './ChangePassword.styles';
+import { authService } from '../../services/auth/authService'; // ⬅ IMPORTANTE
 
 const BG = require('../../img/fondo.png');
 const LOGO = require('../../../assets/icons/logo1.png');
 
-// Regla de contraseña: 8+ chars, 1 mayús, 1 minús, 1 número (¡puedes ajustar!)
+// Reglas de contraseña
 const hasUpper = (s: string) => /[A-ZÁÉÍÓÚÑ]/.test(s);
 const hasLower = (s: string) => /[a-záéíóúñ]/.test(s);
 const hasDigit = (s: string) => /\d/.test(s);
@@ -30,11 +31,15 @@ export default function ChangePasswordScreen() {
   const [confirm, setConfirm] = useState('');
 
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [backendError, setBackendError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
 
   const errors = useMemo(() => {
     const e: { current?: string; nextPwd?: string; confirm?: string } = {};
+
     if (!current.trim()) e.current = 'La contraseña actual es obligatoria.';
+
     if (!nextPwd.trim()) {
       e.nextPwd = 'La nueva contraseña es obligatoria.';
     } else {
@@ -43,17 +48,42 @@ export default function ChangePasswordScreen() {
       else if (!hasLower(nextPwd)) e.nextPwd = 'Debe incluir al menos una minúscula.';
       else if (!hasDigit(nextPwd)) e.nextPwd = 'Debe incluir al menos un número.';
     }
+
     if (!confirm.trim()) e.confirm = 'Debes confirmar la contraseña.';
     else if (confirm !== nextPwd) e.confirm = 'Las contraseñas no coinciden.';
+
     return e;
   }, [current, nextPwd, confirm]);
 
   const isValid = useMemo(() => Object.keys(errors).length === 0, [errors]);
 
-  const onSubmit = () => {
+  // ===============================================================
+  // 🔵 ENVÍO REAL AL BACKEND
+  // ===============================================================
+  const onSubmit = async () => {
     setSubmitted(true);
+    setBackendError('');
+
     if (!isValid) return;
-    setShowSuccess(true);
+
+    try {
+      setLoading(true);
+
+      await authService.changePassword(current, nextPwd, confirm);
+
+      setLoading(false);
+      setShowSuccess(true);
+    } catch (err: any) {
+      setLoading(false);
+      console.log("ERR change password:", err);
+
+      const msg =
+        err?.message ||
+        err?.response?.data?.message ||
+        'No se pudo actualizar la contraseña.';
+
+      setBackendError(msg);
+    }
   };
 
   const onCloseModal = () => {
@@ -65,18 +95,22 @@ export default function ChangePasswordScreen() {
     <SafeAreaView style={styles.safe}>
       <ImageBackground source={BG} style={styles.bg} resizeMode="cover" />
 
-      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={{ top: 12, left: 12, right: 12, bottom: 12 }}>
+      <TouchableOpacity
+        style={styles.backBtn}
+        onPress={() => navigation.goBack()}
+        hitSlop={{ top: 12, left: 12, right: 12, bottom: 12 }}
+      >
         <Svg width={26} height={26} viewBox="0 0 24 24">
           <Path d="M15 18l-6-6 6-6" stroke="#fff" strokeWidth={2.2} fill="none" strokeLinecap="round" />
         </Svg>
       </TouchableOpacity>
+
       <Image source={LOGO} style={styles.logo} />
 
       <View style={styles.card}>
         <Text style={styles.title}>Actualizar{'\n'}contraseña</Text>
         <Text style={styles.subtitle}>
-          Por favor, introduce tu contraseña actual y a continuación ingresa la nueva contraseña
-          que deseas configurar.
+          Por favor, introduce tu contraseña actual y después ingresa la nueva.
         </Text>
 
         {/* Actual */}
@@ -136,12 +170,20 @@ export default function ChangePasswordScreen() {
         </View>
         {submitted && errors.confirm ? <Text style={styles.err}>{errors.confirm}</Text> : null}
 
+        {/* Error del backend */}
+        {backendError ? <Text style={styles.errBackend}>{backendError}</Text> : null}
+
+        {/* Botón */}
         <TouchableOpacity
-          style={[styles.btn, styles.btnPrimary, !isValid && { opacity: 0.6 }]}
+          style={[styles.btn, styles.btnPrimary]}
           onPress={onSubmit}
-          disabled={!isValid && submitted}
+          disabled={loading}
         >
-          <Text style={styles.btnText}>Enviar</Text>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.btnText}>Enviar</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity style={[styles.btn, styles.btnGhost]} onPress={() => navigation.goBack()}>
@@ -149,6 +191,7 @@ export default function ChangePasswordScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* MODAL ÉXITO */}
       <Modal visible={showSuccess} transparent animationType="fade" onRequestClose={onCloseModal}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>

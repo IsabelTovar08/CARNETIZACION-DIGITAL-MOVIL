@@ -17,11 +17,20 @@ export type PrivateStackParamList = {
   PastEvents: undefined;
   QrReader: undefined;
   ChangePassword: undefined; // nueva ruta para actualizar contraseña
+  RequestChange: undefined; // nueva ruta para solicitar cambio de datos
+  Events: undefined;
+  Asistencias: undefined;
+  MyRequests: undefined;
+  EventAttendance: { event: any};
+  RequestDetails: { item: any };
+  NotificationDetail: { notification: any};
+  EventDetail: {item: any};
 };
 
 export type AppTabParamList = {
   HomeTab: undefined;
-  DetailsTab: undefined;
+  CardTab: undefined;
   NotificationsTab: undefined;
   PerfilTab: undefined;
+  EventsTab: undefined;
 };

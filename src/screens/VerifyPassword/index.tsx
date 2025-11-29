@@ -1,5 +1,5 @@
 // src/screens/VerifyPassword/index.tsx
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import {
   View, Text, SafeAreaView, TextInput, TouchableOpacity, Platform,
   ImageBackground, Image, StatusBar,
@@ -9,6 +9,7 @@ import { PublicStackParamList } from '../../navigation/types';
 import { styles } from './VerifyPassword.styles';
 import { authService } from '../../services/auth/authService';
 import { useAuth } from '../../services/auth/AuthContext';
+import { useUser } from '../../services/context/UserContext';
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'VerifyPassword'>;
 
@@ -20,6 +21,7 @@ const LOCK_SOURCE = require('../../img/candado.png');
 
 export default function VerifyPasswordScreen({ route, navigation }: Props) {
   const { signIn } = useAuth();
+  const { loadCurrentUser, user } = useUser();
   const { email, userId } = route.params;
 
   const [values, setValues] = useState<string[]>(Array.from({ length: OTP_LEN }, () => ''));
@@ -55,18 +57,31 @@ export default function VerifyPasswordScreen({ route, navigation }: Props) {
     }
   };
 
-  const verify = () => {
+  /// <summary>
+  /// Verifica el código OTP, realiza el login y carga la información del usuario.
+  /// </summary>
+  const verify = async () => {
     if (code.length !== OTP_LEN) {
       setErrorText(`Completa los ${OTP_LEN} dígitos.`);
       return;
     }
-    // SOLO FRONT: navega siempre al tener 6 dígitos
-    authService.verifyCode(userId, code).then(res => {
-      signIn();
-    }).catch(err => {
-      setErrorText(err?.message || 'Código inválido. Intenta de nuevo.');
-    });
+
+    try {
+      // Verifica el código OTP con el backend
+      const res = await authService.verifyCode(userId, code);
+
+      // Si es correcto, activa sesión en el contexto de autenticación
+      await signIn();
+
+      // Carga la información del usuario desde /api/user/me
+      await loadCurrentUser();
+
+      console.log("✅ Usuario autenticado:", user?.userName);
+    } catch (err: any) {
+      setErrorText(err?.message || "Código inválido. Intenta de nuevo.");
+    }
   };
+  
 
   return (
     <SafeAreaView style={styles.safe}>

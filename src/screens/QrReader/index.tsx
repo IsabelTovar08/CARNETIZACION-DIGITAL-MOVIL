@@ -1,122 +1,160 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   SafeAreaView,
   View,
   Text,
   TouchableOpacity,
-  Linking,
   Vibration,
   Modal,
   ActivityIndicator,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as Clipboard from 'expo-clipboard';
 import Svg, { Path } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import { styles } from './QrReader.styles';
+import { AttendanceService } from '../../services/http/attendance/AttendanceService';
 
-type Parsed = Record<string, any> | null;
-
-function parseQrPayload(raw: string): Parsed {
-  // 1) JSON
-  try {
-    const obj = JSON.parse(raw);
-    if (obj && typeof obj === 'object') return obj;
-  } catch {}
-  // 2) URL con query params
-  try {
-    const url = new URL(raw);
-    const o: Record<string, string> = {};
-    url.searchParams.forEach((v, k) => (o[k] = v));
-    if (Object.keys(o).length) {
-      o.__href = url.href;
-      return o;
-    }
-  } catch {}
-  // 3) Texto plano
-  return { raw };
-}
+const attendanceService = new AttendanceService();
 
 export default function QrReaderScreen() {
   const navigation = useNavigation();
   const [permission, requestPermission] = useCameraPermissions();
-  const [scanned, setScanned] = useState(false);
-  const [value, setValue] = useState<string | null>(null);
-  const [parsed, setParsed] = useState<Parsed>(null);
 
-  const [confirming, setConfirming] = useState(false);
-  const [confirmResult, setConfirmResult] = useState<null | 'ok' | 'error'>(null);
+  const [scanned, setScanned] = useState(false);
+  const [qrValue, setQrValue] = useState<string | null>(null);
+
+  const [modal, setModal] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   const camRef = useRef<CameraView>(null);
 
+  // ----------------------------------------------------------
+  // 🔵 PEDIR PERMISOS DE CÁMARA
+  // ----------------------------------------------------------
   useEffect(() => {
-    if (!permission || !permission.granted) requestPermission();
-  }, [permission, requestPermission]);
+    if (permission && permission.status === 'undetermined') {
+      requestPermission();
+    }
+  }, [permission]);
 
+  const resetScan = () => {
+    setScanned(false);
+    setQrValue(null);
+    setModal(null);
+    setLoading(false);
+  };
+
+  // ----------------------------------------------------------
+  // 🔵 ESCANEO DEL QR
+  // ----------------------------------------------------------
   const onBarCodeScanned = useCallback(
     ({ data }: { data: string }) => {
       if (scanned) return;
+
       setScanned(true);
-      setValue(data);
-      setParsed(parseQrPayload(data));
+      setQrValue(data);
       Vibration.vibrate(60);
+
+      // 🚨 AHORA PEDIMOS CONFIRMACIÓN ANTES DE REGISTRAR ENTRADA
+      setModal({
+        title: 'Confirmar entrada',
+        message: '¿Deseas registrar la entrada?',
+        type: 'confirm-entry',
+        qrCodeKey: data,
+      });
     },
     [scanned]
   );
 
-  const resetScan = () => {
-    setScanned(false);
-    setValue(null);
-    setParsed(null);
-    setConfirming(false);
-    setConfirmResult(null);
-  };
-
-  const copyToClipboard = async () => {
-    if (value) await Clipboard.setStringAsync(value);
-  };
-
-  const openLink = () => {
-    if (value && /^https?:\/\//i.test(value)) Linking.openURL(value);
-    if (parsed && parsed.__href) Linking.openURL(parsed.__href);
-  };
-
-  // Habilitamos confirmar cuando tenemos identificadores mínimos
-  const canConfirm = useMemo(() => {
-    if (!parsed) return false;
-    // Ajusta tus claves reales aquí (ejemplos: eventId, userId)
-    const possibleEventKeys = ['eventId', 'eventoId', 'Event'];
-    const possibleUserKeys = ['userId', 'usuarioId', 'id_usuario', 'uid'];
-
-    const hasEvent = possibleEventKeys.some(k => parsed[k] != null && String(parsed[k]).length > 0);
-    const hasUser = possibleUserKeys.some(k => parsed[k] != null && String(parsed[k]).length > 0);
-    // Si solo tienes un “token” en el QR de tu backend, cambia la regla:
-    // const hasToken = parsed.token != null;
-    return hasEvent && hasUser;
-  }, [parsed]);
-
-  // Simula POST a tu API
-  const confirmAttendance = async () => {
-    // if (!canConfirm || !parsed) return;
+  // ----------------------------------------------------------
+  // 🔥 PROCESAR ENTRADA
+  // ----------------------------------------------------------
+  const handleAttendance = async (qrCodeKey: string) => {
     try {
-      setConfirming(true);
-      // Aquí conectarías tu API, por ejemplo:
-      // await fetch('https://tu.api/attendance/confirm', { method: 'POST', body: JSON.stringify(parsed) })
-      await new Promise(r => setTimeout(r, 1200)); // simulate
-      setConfirmResult('ok');
-      Vibration.vibrate([0, 50, 40, 50]);
-    } catch {
-      setConfirmResult('error');
-      Vibration.vibrate([0, 100, 60, 100]);
+      setLoading(true);
+
+      const entryRes = await attendanceService.registerEntry(qrCodeKey);
+
+      if (entryRes?.success) {
+        setModal({
+          title: 'Entrada registrada',
+          message: entryRes?.message ?? 'Entrada registrada correctamente.',
+          type: 'entry',
+        });
+        Vibration.vibrate([0, 50, 40, 50]);
+        return;
+      }
+
+      // Entrada encontrada → preguntar salida
+      if (entryRes?.message?.includes('¿Desea realizar la salida?')) {
+        setModal({
+          title: 'Entrada existente',
+          message: entryRes.message,
+          type: 'ask-exit',
+          qrCodeKey,
+        });
+        return;
+      }
+
+      setModal({
+        title: 'Error',
+        message: entryRes?.message ?? 'No se pudo registrar la asistencia.',
+        type: 'error',
+      });
+    } catch (err) {
+      console.log('❌ Error:', err);
+      setModal({
+        title: 'Error',
+        message: 'Error de conexión.',
+        type: 'error',
+      });
     } finally {
-      setConfirming(false);
+      setLoading(false);
     }
   };
 
+  // ----------------------------------------------------------
+  // 🔥 PROCESAR SALIDA
+  // ----------------------------------------------------------
+  const handleExit = async (qrCodeKey: string) => {
+    try {
+      setLoading(true);
+      const exitRes = await attendanceService.registerExit(qrCodeKey);
+
+      if (exitRes?.success) {
+        setModal({
+          title: 'Salida registrada',
+          message: exitRes?.message ?? 'Salida registrada correctamente.',
+          type: 'exit',
+        });
+        Vibration.vibrate([0, 50, 40, 50]);
+        return;
+      }
+
+      setModal({
+        title: 'Error',
+        message: exitRes?.message ?? 'No se pudo registrar la salida.',
+        type: 'error',
+      });
+    } catch (err) {
+      console.log('❌ Error salida:', err);
+      setModal({
+        title: 'Error',
+        message: 'Error de conexión.',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ----------------------------------------------------------
+  // RENDER PRINCIPAL
+  // ----------------------------------------------------------
   if (!permission) {
     return (
       <SafeAreaView style={styles.center}>
-        <Text style={styles.info}>Solicitando permisos de cámara…</Text>
+        <Text style={styles.info}>Solicitando permisos…</Text>
       </SafeAreaView>
     );
   }
@@ -124,7 +162,8 @@ export default function QrReaderScreen() {
   if (!permission.granted) {
     return (
       <SafeAreaView style={styles.center}>
-        <Text style={styles.info}>Necesitas habilitar la cámara para escanear QR.</Text>
+        <Text style={styles.info}>Necesitas habilitar la cámara.</Text>
+
         <TouchableOpacity style={styles.btn} onPress={requestPermission}>
           <Text style={styles.btnText}>Conceder permiso</Text>
         </TouchableOpacity>
@@ -134,16 +173,20 @@ export default function QrReaderScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <TouchableOpacity
-        style={styles.back}
-        onPress={() => navigation.goBack()}
-        hitSlop={{ top: 12, left: 12, right: 12, bottom: 12 }}
-      >
+      {/* Botón volver */}
+      <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
         <Svg width={26} height={26} viewBox="0 0 24 24">
-          <Path d="M15 18l-6-6 6-6" stroke="#fff" strokeWidth={2.2} fill="none" strokeLinecap="round" />
+          <Path
+            d="M15 18l-6-6 6-6"
+            stroke="#fff"
+            strokeWidth={2.2}
+            fill="none"
+            strokeLinecap="round"
+          />
         </Svg>
       </TouchableOpacity>
 
+      {/* Cámara */}
       <View style={styles.cameraWrap}>
         <CameraView
           ref={camRef}
@@ -153,16 +196,20 @@ export default function QrReaderScreen() {
           barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
         />
 
+        {/* Overlay */}
         <View style={styles.overlay}>
           <View style={styles.mask} />
           <View style={styles.centerRow}>
             <View style={styles.mask} />
+
+            {/* Marco */}
             <View style={styles.frame}>
               <View style={[styles.corner, styles.tl]} />
               <View style={[styles.corner, styles.tr]} />
               <View style={[styles.corner, styles.bl]} />
               <View style={[styles.corner, styles.br]} />
             </View>
+
             <View style={styles.mask} />
           </View>
           <View style={styles.mask} />
@@ -171,84 +218,66 @@ export default function QrReaderScreen() {
         <Text style={styles.hint}>Alinea el QR dentro del marco</Text>
       </View>
 
-      {/* Modal resultado + confirmación */}
-      <Modal transparent visible={!!value} animationType="fade" onRequestClose={resetScan}>
+      {/* LOADING overlay */}
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#00ffcc" />
+          <Text style={styles.loadingText}>Procesando…</Text>
+        </View>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN / RESPUESTAS */}
+      <Modal transparent visible={!!modal}>
         <View style={styles.modalBg}>
           <View style={styles.modalCard}>
-            {/* Estados */}
-            {confirmResult === 'ok' ? (
-              <>
-                <Text style={styles.modalTitle}>Asistencia confirmada</Text>
-                <Text style={styles.modalValue}>¡Registramos tu asistencia correctamente!</Text>
-                <View style={styles.actions}>
-                  <TouchableOpacity style={[styles.actionBtn, styles.primary]} onPress={resetScan}>
+            <Text style={styles.modalTitle}>{modal?.title}</Text>
+            <Text style={styles.modalValue}>{modal?.message}</Text>
+
+            <View style={styles.actions}>
+
+              {/* 🔵 CONFIRMAR ENTRADA */}
+              {modal?.type === 'confirm-entry' && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.primary]}
+                    onPress={() => handleAttendance(modal.qrCodeKey)}
+                  >
+                    <Text style={styles.actionText}>Sí, registrar entrada</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={styles.actionBtn} onPress={resetScan}>
+                    <Text style={styles.actionText}>Cancelar</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* 🔵 CONFIRMAR SALIDA */}
+              {modal?.type === 'ask-exit' && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.primary]}
+                    onPress={() => handleExit(modal.qrCodeKey)}
+                  >
+                    <Text style={styles.actionText}>Sí, registrar salida</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={styles.actionBtn} onPress={resetScan}>
+                    <Text style={styles.actionText}>Cancelar</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* 🔵 MENSAJES FINALES */}
+              {modal?.type !== 'confirm-entry' &&
+                modal?.type !== 'ask-exit' && (
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.primary]}
+                    onPress={resetScan}
+                  >
                     <Text style={styles.actionText}>Cerrar</Text>
                   </TouchableOpacity>
-                </View>
-              </>
-            ) : confirmResult === 'error' ? (
-              <>
-                <Text style={styles.modalTitle}>No se pudo confirmar</Text>
-                <Text style={styles.modalValue}>Inténtalo nuevamente.</Text>
-                <View style={styles.actions}>
-                  <TouchableOpacity style={[styles.actionBtn, styles.primary]} onPress={confirmAttendance}>
-                    <Text style={styles.actionText}>Reintentar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.actionBtn} onPress={resetScan}>
-                    <Text style={styles.actionText}>Escanear de nuevo</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : (
-              <>
-                <Text style={styles.modalTitle}>Datos leídos</Text>
-
-                {/* Render amistoso si viene JSON/URL */}
-                {parsed && (parsed.eventId || parsed.usuarioId || parsed.userId || parsed.raw) ? (
-                  <View style={{ marginTop: 6 }}>
-                    {parsed.eventId && <Text style={styles.metaLine}>Evento: {String(parsed.eventId)}</Text>}
-                    {parsed.usuarioId && <Text style={styles.metaLine}>Usuario: {String(parsed.usuarioId)}</Text>}
-                    {parsed.userId && !parsed.usuarioId && (
-                      <Text style={styles.metaLine}>Usuario: {String(parsed.userId)}</Text>
-                    )}
-                    {parsed.nombre && <Text style={styles.metaLine}>Nombre: {String(parsed.nombre)}</Text>}
-                    {parsed.email && <Text style={styles.metaLine}>Email: {String(parsed.email)}</Text>}
-                    {parsed.raw && <Text style={styles.modalValue} numberOfLines={3}>{String(parsed.raw)}</Text>}
-                    {parsed.__href && <Text style={styles.linkLine}>{parsed.__href}</Text>}
-                  </View>
-                ) : (
-                  <Text style={styles.modalValue} numberOfLines={3}>{value}</Text>
                 )}
-
-                <View style={styles.actions}>
-                  <TouchableOpacity style={styles.actionBtn} onPress={copyToClipboard}>
-                    <Text style={styles.actionText}>Copiar</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.actionBtn} onPress={openLink}>
-                    <Text style={styles.actionText}>Abrir</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.actionBtn} onPress={resetScan}>
-                    <Text style={styles.actionText}>Escanear de nuevo</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.confirmBtn,
-                      (!canConfirm || confirming) && { opacity: 0.6 },
-                    ]}
-                    onPress={confirmAttendance}
-                  >
-                    {confirming ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.confirmText}>Confirmar asistencia</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
+            </View>
           </View>
         </View>
       </Modal>

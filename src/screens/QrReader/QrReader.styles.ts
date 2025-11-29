@@ -58,4 +58,23 @@ export const styles = StyleSheet.create({
   successMsg: { color: '#174B73', textAlign: 'center', marginBottom: 14 },
   successBtn: { backgroundColor: '#2F6D8B', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 18, alignSelf: 'stretch' },
   successBtnText: { color: '#fff', fontWeight: '800', textAlign: 'center' },
+  
+  loadingOverlay: {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: "rgba(0,0,0,0.55)",
+  justifyContent: "center",
+  alignItems: "center",
+  zIndex: 20,
+},
+
+loadingText: {
+  color: "#fff",
+  marginTop: 12,
+  fontSize: 16,
+},
+
 });

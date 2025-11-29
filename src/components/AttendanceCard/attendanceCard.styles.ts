@@ -11,6 +11,7 @@ export const palette = {
   muted: '#64748B',
   border: '#E2E8F0',
   bg: '#F9FAFB',
+  primaryLight: '#BBDEFB',
 };
 
 export const styles = StyleSheet.create({

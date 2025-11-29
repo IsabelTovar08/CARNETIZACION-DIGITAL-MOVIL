@@ -1,4 +1,4 @@
-package com.anonymous.rninicio
+package com.anonymous.carnetgo
 
 import android.os.Build
 import android.os.Bundle
