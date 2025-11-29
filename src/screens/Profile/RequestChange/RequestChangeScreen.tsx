@@ -5,8 +5,8 @@ import {
   TextInput,
   TouchableOpacity,
   SafeAreaView,
+  ActivityIndicator,
   Alert,
-  Modal,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { ALERT_TYPE, Toast } from "react-native-alert-notification";
@@ -17,11 +17,15 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import colors from "../../../theme/colors";
 import { AdaptiveInput } from "./AdaptiveInput";
 
+/* ------------------------------------------
+   DTOs
+---------------------------------------------*/
 interface ModificationRequestCreateDto {
   field: number;
   reason: number;
   newValue: string;
   message?: string;
+  oldValue?: string;
 }
 
 interface EnumOptionDto {
@@ -35,24 +39,23 @@ interface ModificationResponse {
   fieldName: string;
   reasonName: string;
   newValue: string;
-  status: string;
-  message?: string;
+  statusName: string;
+  oldValue?: string;
   requestDate: string;
 }
 
-const modificationRequestService = new ModificationRequestService<
-  ModificationRequestCreateDto,
-  any
->();
+/* ------------------------------------------
+   Services
+---------------------------------------------*/
+const modificationRequestService =
+  new ModificationRequestService<ModificationRequestCreateDto, any>();
 
 const apiService = new ApiService<any, any>("");
 
-interface Props {
-  navigation: any;
-}
-
-
-export default function RequestChangeScreen({navigation} : Props) {
+/* ------------------------------------------
+   COMPONENT
+---------------------------------------------*/
+export default function RequestChangeScreen({ navigation }: any) {
   const [fields, setFields] = useState<EnumOptionDto[]>([]);
   const [reasons, setReasons] = useState<EnumOptionDto[]>([]);
 
@@ -65,11 +68,11 @@ export default function RequestChangeScreen({navigation} : Props) {
     null
   );
 
-  const [responseData, setResponseData] = useState<ModificationResponse | null>(
-    null
-  );
-  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  /* ------------------------------------------
+     Cargar enumeraciones desde backend
+  ---------------------------------------------*/
   useEffect(() => {
     const loadEnums = async () => {
       const [resFields, resReasons] = await Promise.all([
@@ -84,9 +87,9 @@ export default function RequestChangeScreen({navigation} : Props) {
     loadEnums();
   }, []);
 
-  /// <summary>
-  /// Enviar solicitud
-  /// </summary>
+  /* ------------------------------------------
+     Enviar solicitud de cambio
+  ---------------------------------------------*/
   const sendRequest = async () => {
     if (field === undefined || reason === undefined || !newValue.trim()) {
       Alert.alert(
@@ -96,19 +99,37 @@ export default function RequestChangeScreen({navigation} : Props) {
       return;
     }
 
+    setLoading(true);
+
     const payload: ModificationRequestCreateDto = {
-      field,
-      reason,
+      field: Number(field), // 🔥 aseguramos número
+      reason: Number(reason), // 🔥 aseguramos número
+      oldValue: "",
       newValue,
       message: message.trim() || undefined,
     };
 
+    console.log("PAYLOAD ENVIADO:", payload);
+
     const res = await modificationRequestService.Save(payload);
 
-    if (res.success && res.data) {
-      setResponseData(res.data);
-      setShowModal(true);
+    setLoading(false);
 
+    if (res.success && res.data) {
+      const data: ModificationResponse = res.data;
+
+      // Convertir base64 si es una imagen
+      const isImage =
+        data.fieldName.toLowerCase().includes("foto") ||
+        data.newValue.startsWith("data:image");
+
+      if (isImage && !data.newValue.startsWith("data:image")) {
+        data.newValue = `data:image/jpeg;base64,${data.newValue}`;
+      }
+
+      navigation.navigate("RequestDetails", { item: data });
+
+      // Reset
       setField(undefined);
       setReason(undefined);
       setNewValue("");
@@ -127,18 +148,18 @@ export default function RequestChangeScreen({navigation} : Props) {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Solicitud de cambio de datos</Text>
 
-      {/* Campo */}
+      {/* -------------- CAMPO A MODIFICAR -------------- */}
       <Text style={styles.label}>Dato que deseas modificar</Text>
 
       <View style={styles.pickerContainer}>
         <Picker
           selectedValue={field}
           onValueChange={(v) => {
-            setField(v);
+            const numeric = Number(v); // 🔥 convertir a número
+            setField(numeric);
 
-            const found = fields.find((f) => f.id === v);
+            const found = fields.find((f) => f.id === numeric);
             setSelectedFieldCode(found?.code || null);
-
             setNewValue("");
           }}
         >
@@ -149,7 +170,7 @@ export default function RequestChangeScreen({navigation} : Props) {
         </Picker>
       </View>
 
-      {/* Input dinámico */}
+      {/* -------------- NUEVO VALOR -------------- */}
       <Text style={styles.label}>Nuevo valor</Text>
       <AdaptiveInput
         fieldCode={selectedFieldCode}
@@ -157,10 +178,14 @@ export default function RequestChangeScreen({navigation} : Props) {
         onChange={setNewValue}
       />
 
-      {/* Motivo */}
+      {/* -------------- MOTIVO -------------- */}
       <Text style={styles.label}>Motivo</Text>
+
       <View style={styles.pickerContainer}>
-        <Picker selectedValue={reason} onValueChange={setReason}>
+        <Picker
+          selectedValue={reason}
+          onValueChange={(v) => setReason(Number(v))} // 🔥 número
+        >
           <Picker.Item label="Selecciona un motivo..." value={undefined} />
           {reasons.map((r) => (
             <Picker.Item key={r.id} label={r.name} value={r.id} />
@@ -168,64 +193,14 @@ export default function RequestChangeScreen({navigation} : Props) {
         </Picker>
       </View>
 
-      {/* Mensaje */}
-      <Text style={styles.label}>Mensaje (opcional)</Text>
-      <TextInput
-        placeholder="Agrega un mensaje si lo deseas"
-        style={[styles.input, styles.textArea]}
-        multiline
-        value={message}
-        onChangeText={setMessage}
-      />
-
-      {/* Botón */}
+      {/* -------------- BOTÓN -------------- */}
       <TouchableOpacity style={styles.btn} onPress={sendRequest}>
-        <Text style={styles.btnText}>Enviar solicitud</Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Text style={styles.btnText}>Enviar solicitud</Text>
+        )}
       </TouchableOpacity>
-
-      {/* Modal */}
-      <Modal visible={showModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Ionicons
-              name="checkmark-circle"
-              size={64}
-              color={colors.success}
-              style={{ alignSelf: "center", marginBottom: 10 }}
-            />
-
-            <Text style={styles.modalTitle}>Solicitud enviada</Text>
-
-            {responseData && (
-              <View style={styles.modalContent}>
-                <Text>
-                  <Text style={styles.bold}>Campo: </Text>
-                  {responseData.fieldName}
-                </Text>
-                <Text>
-                  <Text style={styles.bold}>Motivo: </Text>
-                  {responseData.reasonName}
-                </Text>
-                <Text>
-                  <Text style={styles.bold}>Nuevo valor: </Text>
-                  {responseData.newValue}
-                </Text>
-                <Text>
-                  <Text style={styles.bold}>Estado: </Text>
-                  {responseData.status}
-                </Text>
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={[styles.btn, { marginTop: 20 }]}
-              onPress={() => setShowModal(false)}
-            >
-              <Text style={styles.btnText} onPress={() => navigation.navigate("MyRequestsScreen")}>Aceptar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }

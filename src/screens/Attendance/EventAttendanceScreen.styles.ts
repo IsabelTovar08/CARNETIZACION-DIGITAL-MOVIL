@@ -203,4 +203,46 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 2,
   },
+  /* ============================================================
+   🔵 PERSONA — TARJETA DENTRO DEL MODAL
+============================================================ */
+  personCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EEF5FF",
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 18,
+
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+
+  personPhoto: {
+    width: 70,
+    height: 70,
+    borderRadius: 50,
+    marginRight: 14,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
+  },
+
+  personName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1E293B",
+    marginBottom: 4,
+  },
+
+  personData: {
+    color: "#475569",
+    fontSize: 14,
+    marginBottom: 2,
+  },
+
 });

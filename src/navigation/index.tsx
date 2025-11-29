@@ -101,7 +101,7 @@ function HomePrivateStack() {
       <PrivateStack.Screen
         name="PastEvents"
         component={PastEventsScreen}
-        options={{ headerShown: true, title: 'Eventos Pasados' }}
+        options={{ headerShown: true, title: 'Eventos Registrados' }}
       />
       <PrivateStack.Screen
         name="QrReader"
@@ -244,6 +244,12 @@ function PeoplePrivateStack() {
         component={NotificationsScreen}
         options={{ title: 'Notificaciones' }}
       />
+      <PrivateStack.Screen
+        name="RequestDetails"
+        component={RequestDetailsScreen}
+        options={{ headerShown: false }}
+      />
+
     </PrivateStack.Navigator>
   );
 }

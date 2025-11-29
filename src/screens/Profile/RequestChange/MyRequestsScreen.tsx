@@ -6,34 +6,26 @@ import {
   RefreshControl,
   TouchableOpacity,
   SafeAreaView,
-  Image,
 } from "react-native";
-import { ALERT_TYPE, Toast } from "react-native-alert-notification";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useNavigation } from "@react-navigation/native";
+import { ALERT_TYPE, Toast } from "react-native-alert-notification";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ModificationRequestService } from "../../../services/http/ModificationsRequests/modificationRequest";
 import { styles } from "./MyRequestsScreen.styles";
 
 interface ModificationRequestResponseDto {
   id: number;
-  fieldName: string;
-  oldValue: string;
-  newValue: string;
-  statusName: string;
-  message?: string;
+  fieldName: string;     // → Tipo
+  message?: string;      // → Mensaje (si existe)
+  statusName: string;    // → Estado
+  reasonName?: string; // → Motivo
   requestDate: string;
 }
 
-const modificationRequestService = new ModificationRequestService<
-  any,
-  ModificationRequestResponseDto
->();
-interface Props {
-  navigation: any;
-}
+const modificationRequestService =
+  new ModificationRequestService<any, ModificationRequestResponseDto>();
 
-export default function MyRequestsScreen({navigation} : Props) {
+export default function MyRequestsScreen({ navigation }: any) {
   const [requests, setRequests] = useState<ModificationRequestResponseDto[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
@@ -51,23 +43,13 @@ export default function MyRequestsScreen({navigation} : Props) {
           textBody: res?.message || "No se pudieron cargar las solicitudes.",
         });
       }
-    } catch (err) {
+    } catch {
       Toast.show({
         type: ALERT_TYPE.DANGER,
         textBody: "Error obteniendo solicitudes.",
       });
     }
-
     setRefreshing(false);
-  };
-
-  const isImage = (value: string, field: string) => {
-    const f = field.toLowerCase();
-    return (
-      f.includes("foto") ||
-      f.includes("imagen") ||
-      value.startsWith("data:image")
-    );
   };
 
   useEffect(() => {
@@ -89,6 +71,7 @@ export default function MyRequestsScreen({navigation} : Props) {
     <SafeAreaView style={[styles.container, { paddingBottom: insets.bottom }]}>
       <Text style={styles.title}>Mis Solicitudes</Text>
 
+      {/* FAB */}
       <TouchableOpacity
         style={[styles.fab, { bottom: insets.bottom + 70, right: 20 }]}
         activeOpacity={0.8}
@@ -97,6 +80,7 @@ export default function MyRequestsScreen({navigation} : Props) {
         <Ionicons name="add" size={30} color="#fff" />
       </TouchableOpacity>
 
+      {/* LISTADO */}
       <FlatList
         data={requests}
         keyExtractor={(i) => i.id.toString()}
@@ -107,11 +91,9 @@ export default function MyRequestsScreen({navigation} : Props) {
           <TouchableOpacity
             style={styles.card}
             activeOpacity={0.8}
-            onPress={() =>
-              navigation.navigate("RequestDetails", { item })
-            }
+            onPress={() => navigation.navigate("RequestDetails", { item })}
           >
-            {/* Header */}
+            {/* Tipo + Estado */}
             <View style={styles.cardHeader}>
               <Text style={styles.fieldName}>{item.fieldName}</Text>
 
@@ -125,27 +107,20 @@ export default function MyRequestsScreen({navigation} : Props) {
               </View>
             </View>
 
-            {/* Nuevo valor */}
-            <View style={{ marginVertical: 6 }}>
-              <Text style={styles.bold}>Nuevo valor:</Text>
+            {/* Mensaje (si existe) */}
+            {item.message && (
+              <Text style={styles.cardText}>
+                {item.message}
+              </Text>
+            )}
 
-              {isImage(item.newValue, item.fieldName) ? (
-                <Image
-                  source={{ uri: item.newValue }}
-                  style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 8,
-                    marginTop: 6,
-                  }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <Text numberOfLines={1} style={styles.cardText}>
-                  {item.newValue}
-                </Text>
-              )}
-            </View>
+            {/* Motivo (si existe) */}
+            {item.reasonName && (
+              <Text style={[styles.cardText, { marginTop: 6 }]}>
+                <Text style={styles.bold}>Motivo: </Text>
+                {item.reasonName}
+              </Text>
+            )}
 
             {/* Fecha */}
             <Text style={styles.cardDate}>
@@ -154,9 +129,7 @@ export default function MyRequestsScreen({navigation} : Props) {
           </TouchableOpacity>
         )}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>
-            No tienes solicitudes registradas.
-          </Text>
+          <Text style={styles.emptyText}>No tienes solicitudes registradas.</Text>
         }
       />
     </SafeAreaView>

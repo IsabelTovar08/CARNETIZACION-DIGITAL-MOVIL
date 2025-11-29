@@ -114,9 +114,9 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
         <Text style={styles.time}>
           {item.timeOfEntry
             ? new Date(item.timeOfEntry).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
+              hour: "2-digit",
+              minute: "2-digit",
+            })
             : "-"}
         </Text>
       </View>
@@ -125,9 +125,9 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
         <Text style={styles.time}>
           {item.timeOfExit
             ? new Date(item.timeOfExit).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
+              hour: "2-digit",
+              minute: "2-digit",
+            })
             : "-"}
         </Text>
       </View>
@@ -217,9 +217,36 @@ export default function EventAttendanceScreen({ route, navigation }: any) {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Detalles de asistencia</Text>
 
+            {/* 🔵 INFO COMPLETA DE LA PERSONA */}
             {detailPerson && (
-              <Text style={styles.modalSubtitle}>{detailPerson.personFullName}</Text>
+              <View style={styles.personCard}>
+                <Image
+                  source={
+                    detailPerson.photoUrl
+                      ? { uri: detailPerson.photoUrl }
+                      : IMG_FALLBACK
+                  }
+                  style={styles.personPhoto}
+                />
+
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.personName}>{detailPerson.personFullName}</Text>
+
+                  <Text style={styles.personData}>
+                    Documento: {detailPerson.documentTypeName} {detailPerson.documentNumber}
+                  </Text>
+
+                  <Text style={styles.personData}>
+                    Teléfono: {detailPerson.phone ?? "Sin teléfono"}
+                  </Text>
+
+                  <Text style={styles.personData}>
+                    Email: {detailPerson.email ?? "Sin correo"}
+                  </Text>
+                </View>
+              </View>
             )}
+
 
             {detailLoading ? (
               <ActivityIndicator color="#38BDF8" style={{ marginVertical: 20 }} />

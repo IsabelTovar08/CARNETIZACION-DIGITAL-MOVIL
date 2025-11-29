@@ -56,7 +56,7 @@ export default function AttendanceScreen() {
   };
 
   const handleEditEvent = (event: EventFullDto) => {
-    navigation.navigate("EditEvent", { event }); // el que tú uses
+    navigation.navigate("EditEvent", { event });
   };
 
   // =====================================================
@@ -77,7 +77,6 @@ export default function AttendanceScreen() {
     return (
       <TouchableOpacity
         activeOpacity={0.9}
-        onPress={() => navigation.navigate("EventDetail", { event: item })}
         style={[
           styles.eventCard,
           Platform.OS === "web" && { boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }
@@ -106,11 +105,11 @@ export default function AttendanceScreen() {
         )}
 
         {/* =====================================================
-            BOTONES EXACTAMENTE COMO EN PastEvents
+            BOTONES (Como PastEvents)
         ====================================================== */}
         <View style={styles.buttonsRow}>
 
-          {/* 🔵 VER ASISTENCIAS (Mismo formato que el modal PastEvents) */}
+          {/* 🔵 VER ASISTENCIAS */}
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={(e) => {
@@ -122,16 +121,15 @@ export default function AttendanceScreen() {
             <Text style={styles.primaryButtonText}>Ver asistencias</Text>
           </TouchableOpacity>
 
-          {/* ✏ EDITAR */}
+          {/* ✏ VER MÁS */}
           <TouchableOpacity
             style={styles.editButton}
             onPress={(e) => {
               e.stopPropagation();
-              navigation.navigate("EditEvent", { event: item });
+              navigation.navigate("EventDetail", { event: item });
             }}
           >
-            <Ionicons name="create-outline" size={18} color="#0EA5E9" />
-            <Text style={styles.editButtonText}>Editar</Text>
+            <Text style={styles.editButtonText}>Ver más</Text>
           </TouchableOpacity>
 
         </View>
@@ -141,7 +139,11 @@ export default function AttendanceScreen() {
   };
 
   return (
-    <ImageBackground source={BG_IMAGE} style={styles.background} resizeMode="cover">
+    <ImageBackground
+      source={BG_IMAGE}
+      style={{ flex: 1 }}      // ⭐ Igual que HOME, fondo funciona perfecto
+      resizeMode="cover"
+    >
       <View style={styles.container}>
         <Text style={styles.title}>Eventos</Text>
 

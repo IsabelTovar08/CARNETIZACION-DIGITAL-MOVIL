@@ -7,13 +7,13 @@ import {
   Animated,
   TouchableOpacity,
   Alert,
-  Pressable,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { WebView } from 'react-native-webview';
 import { useUser } from '../../services/context/UserContext';
 import { IssuedCardService } from '../../services/http/card/IssuedCardService';
-import { styles, CARD_WIDTH, CARD_HEIGHT, GAP } from './Carnets.styles';
+import { styles, CARD_WIDTH, GAP } from './Carnets.styles';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 const { width } = Dimensions.get('window');
 const issuedCardService = new IssuedCardService();
@@ -23,10 +23,10 @@ export default function CarnetsScreen() {
   const { user } = useUser();
   const [flippedId, setFlippedId] = useState<number | null>(null);
 
-  const carnetList = useMemo(() => {
-    console.log(user?.currentProfile)
-    console.log(user?.otherCards)
+  // 🔵 índice actual del carrusel
+  const [currentIndex, setCurrentIndex] = useState(0);
 
+  const carnetList = useMemo(() => {
     if (!user?.currentProfile) return [];
 
     const mapDto = (c: any) => ({
@@ -34,6 +34,8 @@ export default function CarnetsScreen() {
       name: c.name ?? c.personName,
       profile: c.profile ?? c.profileName,
       area: c.categoryArea,
+      internalDivisionName: c.internalDivisionName,
+      organizationalUnit: c.organizationalUnit,
       phone: c.phoneNumber,
       email: c.email,
       cardId: c.cardId,
@@ -47,7 +49,7 @@ export default function CarnetsScreen() {
       logo: c.logoUrl,
       companyName: c.companyName,
       documentCode: c.documentCode,
-      documentNumber: c.documentNumber
+      documentNumber: c.documentNumber,
     });
 
     const current = mapDto(user.currentProfile);
@@ -64,10 +66,13 @@ export default function CarnetsScreen() {
     );
   }
 
-  const handleOpenPdf = async (id: number) => {
-    console.log(carnetList)
+  // ============================
+  // PDF SEGÚN TARJETA VISIBLE
+  // ============================
+  const handleOpenPdf = async () => {
     try {
-      await issuedCardService.openPdf(id);
+      const cardId = carnetList[currentIndex].id; // ← AHORA SÍ EL CORRECTO
+      await issuedCardService.openPdf(cardId);
     } catch {
       Alert.alert('Error', 'No se pudo abrir el PDF.');
     }
@@ -90,6 +95,26 @@ export default function CarnetsScreen() {
           </Text>
         </View>
 
+        {/* BOTÓN FLOTANTE PARA PDF */}
+        <TouchableOpacity
+          onPress={handleOpenPdf}
+          style={{
+            position: 'absolute',
+            top: 110,
+            right: 25,
+            zIndex: 999,
+            backgroundColor: '#ffffffdd',
+            padding: 10,
+            borderRadius: 40,
+            shadowColor: '#000',
+            shadowOpacity: 0.25,
+            shadowRadius: 6,
+            shadowOffset: { width: 0, height: 3 },
+          }}
+        >
+          <Ionicons name="download-outline" size={26} color="#000" />
+        </TouchableOpacity>
+
         {/* CAROUSEL */}
         <View style={styles.carouselWrap}>
           <Animated.FlatList
@@ -105,46 +130,27 @@ export default function CarnetsScreen() {
               paddingHorizontal: (width - CARD_WIDTH) / 2,
             }}
             ItemSeparatorComponent={() => <View style={{ width: GAP }} />}
+            scrollEventThrottle={16}
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-              { useNativeDriver: true }
+              {
+                useNativeDriver: true,
+                listener: (e: any) => {
+                  const x = e.nativeEvent.contentOffset.x;
+                  const index = Math.round(x / (CARD_WIDTH + GAP));
+                  setCurrentIndex(index);
+                },
+
+              }
             )}
-            scrollEventThrottle={16}
-            renderItem={({ item, index }) => {
+            renderItem={({ item }) => {
               const isFlipped = flippedId === item.id;
 
-              const inputRange = [
-                (CARD_WIDTH + GAP) * (index - 1),
-                (CARD_WIDTH + GAP) * index,
-                (CARD_WIDTH + GAP) * (index + 1),
-              ];
-
-              const scale = scrollX.interpolate({
-                inputRange,
-                outputRange: [0.9, 1, 0.9],
-                extrapolate: 'clamp',
-              });
-
-              const opacity = scrollX.interpolate({
-                inputRange,
-                outputRange: [0.7, 1, 0.7],
-                extrapolate: 'clamp',
-              });
-
               return (
-                <Animated.View
-                  style={[
-                    styles.cardContainer,
-                    {
-                      transform: [{ scale }],
-                      opacity,
-                    },
-                  ]}
-                >
+                <Animated.View style={styles.cardContainer}>
                   <View style={styles.card}>
-                    {/* ============================== */}
-                    {/* FRONT SIDE */}
-                    {/* ============================== */}
+
+                    {/* FRONT */}
                     {!isFlipped ? (
                       <View style={styles.cardBackground}>
                         <WebView
@@ -153,24 +159,10 @@ export default function CarnetsScreen() {
                           javaScriptEnabled
                           scrollEnabled={false}
                           originWhitelist={['*']}
-                          automaticallyAdjustContentInsets={false}
-                          injectedJavaScript={`
-                            const svg = document.querySelector('svg');
-                            if (svg) {
-                              svg.removeAttribute('width');
-                              svg.removeAttribute('height');
-                              svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-                              svg.style.width = '100%';
-                              svg.style.height = '100%';
-                            }
-                          `}
-                          scalesPageToFit={false}
                         />
 
-                        {/* CONTENIDO DELANTERO */}
                         <View style={styles.overlay}>
-                          {/* LOGO + EMPRESA */}
-                          {/* LOGO + NOMBRE EMPRESA */}
+                          {/* LOGO */}
                           <View style={styles.companyContainer}>
                             {item.logo && (
                               <Image
@@ -178,71 +170,81 @@ export default function CarnetsScreen() {
                                 style={styles.companyLogo}
                               />
                             )}
-
                             {item.company && (
                               <Text style={styles.companyName}>{item.company}</Text>
                             )}
                           </View>
 
-
                           {/* QR */}
                           <View style={styles.qrContainer}>
-                            <QRCode
-                              value={item.qrUrl ?? ' '}
-                              size={CARD_WIDTH * 0.18}
-                            />
+                            <QRCode value={item.qrUrl ?? ''} size={CARD_WIDTH * 0.18} />
                           </View>
 
-                          {/* FOTO */}
-                          {item.photoUrl && (
+                          {/* FOTO O PLACEHOLDER */}
+                          {item.photoUrl ? (
                             <Image source={{ uri: item.photoUrl }} style={styles.photo} />
+                          ) : (
+                            <View
+                              style={[
+                                styles.photo,
+                                {
+                                  backgroundColor: 'rgba(0,0,0,0.15)',
+                                  borderRadius: 10,
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  borderWidth: 1,
+                                  borderColor: 'rgba(255,255,255,0.3)',
+                                },
+                              ]}
+                            >
+                              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
+                                SIN FOTO
+                              </Text>
+                            </View>
                           )}
 
-                          {/* NOMBRE Y ÁREA (se quedan donde estaban) */}
+                          {/* NOMBRE Y INFO */}
                           <View style={styles.nameContainer}>
                             <Text style={styles.name}>{item.name}</Text>
-                            {item.area && <Text style={styles.area}>{item.area}</Text>}
-                            <Text style={styles.area}>{item.documentCode}</Text>
-                            <Text style={styles.area}>{item.documentNumber}</Text>
-
-
+                            <Text style={styles.area}>
+                              {item.documentCode} - {item.documentNumber}
+                            </Text>
+                            {item.internalDivisionName && (
+                              <Text style={styles.area}>{item.internalDivisionName}</Text>
+                            )}
                           </View>
 
-                          {/* SOLO EL PERFIL — se mueve debajo del QR */}
                           <Text style={styles.profile}>{item.profile}</Text>
 
-
-                          {/* TEL */}
+                          {/* CONTACTO */}
                           <View style={styles.phoneContainer}>
+                            <Text style={styles.label}>{item.organizationalUnit}</Text>
+
                             <Text style={styles.label}>Teléfono</Text>
                             <Text style={styles.value}>{item.phone ?? '---'}</Text>
                           </View>
 
-                          {/* RH */}
                           <View style={styles.rhContainer}>
                             <Text style={styles.label}>RH:</Text>
                             <Text style={styles.rhValue}>{item.rh ?? 'O+'}</Text>
                           </View>
 
-                          {/* CORREO */}
                           <View style={styles.emailContainer}>
                             <Text style={styles.label}>Correo Electrónico</Text>
                             <Text style={styles.value}>{item.email ?? '---'}</Text>
                           </View>
 
-                          {/* BOTÓN VER REVERSO */}
+                          {/* BOTÓN REVERSO */}
                           <TouchableOpacity
                             style={styles.flipButton}
                             onPress={() => toggleFlip(item.id)}
                           >
-                            <Text style={styles.flipText}>Ver reverso</Text>
+                            <Ionicons name="swap-horizontal" size={20} color="#fff" />
                           </TouchableOpacity>
                         </View>
                       </View>
                     ) : (
-                      /* ============================== */
-                      /* BACK SIDE */
-                      /* ============================== */
+                      // BACK
                       <View style={styles.cardBackground}>
                         <WebView
                           source={{ uri: item.backUrl }}
@@ -250,68 +252,17 @@ export default function CarnetsScreen() {
                           javaScriptEnabled
                           scrollEnabled={false}
                           originWhitelist={['*']}
-                          automaticallyAdjustContentInsets={false}
-                          injectedJavaScript={`
-                            const svg = document.querySelector('svg');
-                            if (svg) {
-                              svg.removeAttribute('width');
-                              svg.removeAttribute('height');
-                              svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-                              svg.style.width = '100%';
-                              svg.style.height = '100%';
-                            }
-                          `}
-                          scalesPageToFit={false}
                         />
 
-                        {/* CONTENIDO REVERSO */}
                         <View style={styles.overlay}>
-                          {/* Título */}
-                          <View style={styles.backTitleContainer}>
-                            <View style={styles.backTitleBox}>
-                              <Text style={styles.backTitleText}>
-                                Términos y{'\n'}Condiciones
-                              </Text>
-                            </View>
-                          </View>
-
-                          {/* Guía */}
-                          <Text style={styles.backGuide}>Guía de uso</Text>
-                          <Text style={styles.backBullet1}>
-                            • Este carnet debe presentarse al ingresar a la empresa.
-                          </Text>
-                          <Text style={styles.backBullet2}>
-                            • El mal uso puede generar sanciones.
-                          </Text>
-
-                          {/* Dirección */}
-                          <View style={styles.backAddressContainer}>
-                            <Text style={styles.backLabel}>Dirección</Text>
-                            <Text style={styles.backValue}>{item.address}</Text>
-                          </View>
-
-                          {/* Contacto */}
-                          <View style={styles.backContactContainer}>
-                            <Text style={styles.backLabel}>Contacto</Text>
-                            <Text style={styles.backContactValue}>
-                              {item.phone ?? '---'}
-                              {'\n'}
-                              {item.email ?? '---'}
-                            </Text>
-                          </View>
-
-                          {/* BOTÓN VOLVER AL FRENTE */}
                           <TouchableOpacity
                             style={styles.flipButton}
                             onPress={() => toggleFlip(item.id)}
                           >
-                            <Text style={styles.flipText}>Ver frente</Text>
+                            <Ionicons name="swap-horizontal" size={20} color="#fff" />
                           </TouchableOpacity>
-
                         </View>
-
                       </View>
-
                     )}
                   </View>
                 </Animated.View>

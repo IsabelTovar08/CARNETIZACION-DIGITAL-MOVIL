@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Text,
   Image,
+  Platform,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
@@ -21,14 +22,13 @@ interface Props {
 }
 
 export const AdaptiveInput = ({ fieldCode, value, onChange }: Props) => {
-  // ❗ TODOS LOS HOOKS VAN AQUÍ (NO DENTRO DE IFs)
   const [cities, setCities] = useState<any[]>([]);
   const [bloodTypes, setBloodTypes] = useState<any[]>([]);
   const [docTypes, setDocTypes] = useState<any[]>([]);
   const [imageUri, setImageUri] = useState<string | null>(null);
 
   // ============================================
-  // 🔥 LOAD ENUMS SEGÚN FIELD CODE
+  // LOAD ENUMS
   // ============================================
   useEffect(() => {
     const loadBloodTypes = async () => {
@@ -58,7 +58,7 @@ export const AdaptiveInput = ({ fieldCode, value, onChange }: Props) => {
   }, [fieldCode]);
 
   // ============================================
-  // 🔥 PICK IMAGE
+  // PICK IMAGE (WEB + MOBILE)
   // ============================================
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -71,23 +71,32 @@ export const AdaptiveInput = ({ fieldCode, value, onChange }: Props) => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
-      base64: false,
+      base64: true, // 🔥 NECESARIO PARA WEB
     });
 
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      setImageUri(uri);
+    if (result.canceled) return;
 
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: "base64",
-      });
+    const asset = result.assets[0];
+    setImageUri(asset.uri);
 
-      onChange(base64);
+    // 🔥🔥🔥 WEB → YA TRAE BASE64 DIRECTO
+    if (Platform.OS === "web") {
+      if (asset.base64) {
+        onChange(`data:image/jpeg;base64,${asset.base64}`);
+      }
+      return;
     }
+
+    // 🔥🔥🔥 MOBILE → usar FileSystem para obtener base64
+    const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+    onChange(`data:image/jpeg;base64,${base64}`);
   };
 
   // ============================================
-  // 🔥 RENDER
+  // RENDER PICKERS
   // ============================================
 
   if (fieldCode === "BloodTypeId") {
@@ -141,16 +150,14 @@ export const AdaptiveInput = ({ fieldCode, value, onChange }: Props) => {
     );
   }
 
+  // ============================================
+  // FOTO
+  // ============================================
   if (fieldCode === "PhotoUrl" || fieldCode === "PhotoPath") {
     return (
       <View style={adaptiveStyles.container}>
-        <TouchableOpacity
-          style={adaptiveStyles.uploadButton}
-          onPress={pickImage}
-        >
-          <Text style={adaptiveStyles.uploadButtonText}>
-            Seleccionar imagen
-          </Text>
+        <TouchableOpacity style={adaptiveStyles.uploadButton} onPress={pickImage}>
+          <Text style={adaptiveStyles.uploadButtonText}>Seleccionar imagen</Text>
         </TouchableOpacity>
 
         {(imageUri || value) && (
@@ -163,7 +170,9 @@ export const AdaptiveInput = ({ fieldCode, value, onChange }: Props) => {
     );
   }
 
-  // default: TextInput
+  // ============================================
+  // DEFAULT → TextInput
+  // ============================================
   return (
     <TextInput
       style={adaptiveStyles.textInput}

@@ -13,7 +13,7 @@ export const styles = StyleSheet.create({
   },
   safe: {
     flex: 1,
-    paddingTop: 60,
+    paddingTop: 10,
   },
   emptyContainer: {
     flex: 1,
@@ -191,17 +191,7 @@ export const styles = StyleSheet.create({
     color: '#1b66c9',
   },
 
-  // ===== FRONT SIDE - BOTÓN PDF =====
-  pdfButton: {
-    position: 'absolute',
-    bottom: 28,
-    right: 35,
-    backgroundColor: '#0b3b57',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    zIndex: 2,
-  },
+
   pdfText: {
     color: '#fff',
     fontSize: 13,
@@ -381,5 +371,36 @@ export const styles = StyleSheet.create({
     maxWidth: CARD_WIDTH * 0.3,
   },
 
+/* ================================ */
+/* 🔵 BOTÓN PDF EN HEADER          */
+/* ================================ */
+pdfButtonContainer: {
+  width: "100%",
+  alignItems: "flex-end",
+  marginTop: 10,
+  marginBottom: 5,
+  paddingRight: 10,
+  zIndex: 9999,
+},
+
+pdfButton: {
+  backgroundColor: "#0284C7",     // azul elegante
+  paddingVertical: 8,
+  paddingHorizontal: 14,
+  borderRadius: 8,
+
+  shadowColor: "#000",
+  shadowOpacity: 0.15,
+  shadowRadius: 5,
+  shadowOffset: { width: 0, height: 2 },
+
+  elevation: 4, // Android shadow
+},
+
+pdfButtonText: {
+  color: "#FFF",
+  fontSize: 14,
+  fontWeight: "700",
+},
 
 });

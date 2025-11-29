@@ -4,64 +4,91 @@ import colors from "../../../theme/colors";
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F3F4F6", // gris claro moderno, no blanco y NO débil
     paddingHorizontal: 16,
     paddingTop: 10,
   },
+
+  /** ⭐ Título firme (oscuro, elegante) */
   title: {
     fontSize: 22,
     fontWeight: "700",
-    color: colors.text,
-    marginBottom: 10,
+    color: "#1F2937", // gris carbón (fuerte)
+    marginBottom: 14,
   },
+
+  /** ⭐ Tarjeta clara PERO sólida (sin verse blanda) */
   card: {
-    backgroundColor: "#fafafa",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
+    backgroundColor: "#FFFFFF", // blanco limpio profesional, NO #fafafa pálido
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+
     shadowColor: "#000",
     shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
+
+  /** ⭐ Header fuerte (Tipo + Estado) */
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 8,
   },
+
   fieldName: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: "700",
+    color: "#1F2937",
   },
+
+  /** ⭐ Badge de estado, color firme */
   statusBadge: {
     borderRadius: 12,
-    paddingVertical: 2,
-    paddingHorizontal: 10,
+    paddingVertical: 3,
+    paddingHorizontal: 12,
   },
+
   statusText: {
     color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "700",
     fontSize: 12,
   },
+
+  /** ⭐ Texto principal (cuerpo) */
   cardText: {
-    color: "#555",
+    color: "#374151", // gris oscuro profesional
     fontSize: 14,
-  },
-  cardDate: {
-    color: "#888",
-    fontSize: 12,
-    textAlign: "right",
     marginTop: 4,
   },
-  bold: { fontWeight: "bold" },
+
+  /** ⭐ Fecha (discreta pero visible) */
+  cardDate: {
+    color: "#6B7280",
+    fontSize: 12,
+    textAlign: "right",
+    marginTop: 10,
+  },
+
+  bold: {
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+
+  /** ⭐ Mensaje si no hay nada */
   emptyText: {
     textAlign: "center",
     marginTop: 50,
-    color: "#aaa",
+    color: "#9CA3AF",
     fontSize: 15,
   },
+
+  /** ⭐ Botón flotante */
   fab: {
     position: "absolute",
     backgroundColor: colors.primary,
@@ -78,44 +105,49 @@ export const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
 
-  // 🔹 Modal centrado completo
+  /** ⭐ Modal Backend */
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "flex-end",
   },
+
   modalContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     padding: 20,
     minHeight: "45%",
     maxHeight: "80%",
     shadowColor: "#000",
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 6,
-    elevation: 10,
+    elevation: 8,
   },
+
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 14,
   },
+
   modalTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: colors.primary,
   },
+
   detailText: {
     fontSize: 15,
-    color: "#444",
+    color: "#374151",
     marginVertical: 3,
   },
+
   detailDate: {
     marginTop: 10,
     fontSize: 13,
-    color: "#999",
+    color: "#6B7280",
     textAlign: "right",
   },
 });
